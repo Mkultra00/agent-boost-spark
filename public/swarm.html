@@ -85,9 +85,9 @@ body.paused #pausedTag{display:inline}
 .col section::before,.col section::after{content:"";position:absolute;width:10px;height:10px;border-color:var(--cyan);border-style:solid;pointer-events:none}
 .col section::before{top:-1px;left:-1px;border-width:1px 0 0 1px}
 .col section::after{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
-#left section[data-tab="telemetry"]{flex:0 1 auto;max-height:64%}
-#left section[data-tab="log"]{flex:1;min-height:120px;display:flex;flex-direction:column}
-#right section[data-tab="inspect"]{flex:1;min-height:140px}
+#left section[data-tab="telemetry"]{flex:1 1 auto;max-height:none}
+#right section[data-tab="log"]{flex:1 1 55%;min-height:150px;display:flex;flex-direction:column}
+#right section[data-tab="inspect"]{flex:1 1 45%;min-height:130px}
 
 h2{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.14em;margin:0 0 10px;color:var(--white)}
 h3{font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.1em;color:var(--dim);margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
@@ -194,7 +194,7 @@ select{width:100%;background:var(--panel-strong);border:1px solid var(--line-str
   #hint{display:none}
   .col{top:auto;left:0;right:0;width:auto;bottom:calc(50px + env(safe-area-inset-bottom,0px));height:46%;padding:0 8px 8px;display:none}
   .col section{display:none;flex:1 1 auto!important;max-height:none!important;height:100%}
-  body[data-tab="telemetry"] #left, body[data-tab="log"] #left, body[data-tab="inspect"] #right{display:flex}
+  body[data-tab="telemetry"] #left, body[data-tab="log"] #right, body[data-tab="inspect"] #right{display:flex}
   #ctlbar{position:fixed;left:0;right:0;bottom:calc(50px + env(safe-area-inset-bottom,0px));height:46%;z-index:4;display:none;padding:0 8px 8px;box-sizing:border-box}
   #ctlbar section[data-tab="controls"]{display:none;height:100%;overflow:auto;background:var(--panel);border:1px solid var(--line);padding:12px 14px}
   body[data-tab="controls"] #ctlbar{display:block}
@@ -278,13 +278,13 @@ select{width:100%;background:var(--panel-strong);border:1px solid var(--line-str
     <h3>Vector colors</h3>
     <div class="legend" id="legend"></div>
   </section>
+</aside>
+
+<aside class="col" id="right">
   <section data-tab="log">
     <h2>Event stream</h2>
     <div id="log" aria-live="off"></div>
   </section>
-</aside>
-
-<aside class="col" id="right">
   <section data-tab="inspect">
     <h2>Inspector</h2>
     <select id="selAgent" aria-label="Select a node to inspect"></select>
