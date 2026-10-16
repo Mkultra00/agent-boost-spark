@@ -392,7 +392,57 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   }
 }
 
-function ComplianceScanner() {
+function Briefer({ runDone, compliance }: { runDone: boolean; compliance: ComplianceResult | null }) {
+  const vulns = useMemo(() => {
+    const list: Vuln[] = [...(runDone ? SANDBOX_VULNS : []), ...(compliance ? complianceVulns(compliance) : [])];
+    return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
+  }, [runDone, compliance]);
+
+  const counts = useMemo(() => {
+    const c = { critical: 0, high: 0, medium: 0, low: 0 };
+    vulns.forEach((v) => c[v.severity]++);
+    return c;
+  }, [vulns]);
+
+  const sevColor = (s: Vuln["severity"]) =>
+    s === "critical" ? "text-rose-400 border-rose-500/40" : s === "high" ? "text-orange-400 border-orange-500/40" : s === "medium" ? "text-amber-400 border-amber-500/40" : "text-zinc-400 border-zinc-700";
+
+  return (
+    <section className="mt-8 rounded-md border border-zinc-800 bg-black/40">
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+        <span className="text-xs uppercase tracking-widest text-zinc-400">exec briefer · vulnerabilities & recommendations</span>
+        <span className="text-[10px] uppercase tracking-widest text-zinc-600">
+          {counts.critical} critical · {counts.high} high · {counts.medium} medium · {counts.low} low
+        </span>
+      </div>
+      {vulns.length === 0 ? (
+        <div className="p-6 text-xs text-zinc-500">
+          No findings yet. Wait for the sandbox run to finish, or run a compliance scan on the console tab.
+        </div>
+      ) : (
+        <div className="divide-y divide-zinc-800/70">
+          {vulns.map((v) => (
+            <div key={v.id} className="grid grid-cols-1 gap-2 p-4 md:grid-cols-[110px_1fr]">
+              <div>
+                <span className={`inline-block rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-widest ${sevColor(v.severity)}`}>
+                  {v.severity}
+                </span>
+                <div className="mt-1 text-[10px] text-zinc-600">{v.id} · {v.source}</div>
+              </div>
+              <div>
+                <div className="text-sm text-zinc-100">{v.title}</div>
+                <div className="mt-1 text-xs text-zinc-500">evidence: {v.evidence}</div>
+                <div className="mt-2 text-xs text-emerald-300/90">→ {v.recommendation}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function ComplianceScanner({ onResult }: { onResult: (r: ComplianceResult | null) => void }) {
   const scan = useServerFn(scanCompliance);
   const [url, setUrl] = useState("https://");
   const [authorized, setAuthorized] = useState(false);
@@ -405,8 +455,11 @@ function ComplianceScanner() {
     setBusy(true);
     setErr(null);
     setRes(null);
+    onResult(null);
     try {
-      setRes(await scan({ data: { url } }));
+      const r = await scan({ data: { url } });
+      setRes(r);
+      onResult(r);
     } catch (x) {
       setErr(x instanceof Error ? x.message : String(x));
     } finally {
