@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { runDaytonaProbe, destroyDaytonaSandbox } from "@/lib/daytona.functions";
 import { scanCompliance, type ComplianceResult } from "@/lib/compliance.functions";
 import { speakBriefing } from "@/lib/voice.functions";
+import { recordFlight, recallFlights } from "@/lib/memory.functions";
 import mascot from "@/assets/monkey-mascot.png";
 
 export const Route = createFileRoute("/")({
@@ -530,6 +531,68 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   }
 }
 
+const recordedKeys = new Set<string>();
+
+function FlightRecorder({ runKey, target, mode, vulns }: { runKey: string | null; target: string; mode: "real" | "simulated"; vulns: Vuln[] }) {
+  const record = useServerFn(recordFlight);
+  const recall = useServerFn(recallFlights);
+  const [saved, setSaved] = useState<string | null>(null);
+  const [hits, setHits] = useState<{ id: string; text: string; score: number; at: string | null }[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let off = false;
+    (async () => {
+      setBusy(true);
+      setErr(null);
+      try {
+        if (runKey && !recordedKeys.has(runKey)) {
+          recordedKeys.add(runKey);
+          const r = await record({ data: { target, mode, findings: vulns.map(({ id, title, severity, evidence, recommendation }) => ({ id, title, severity, evidence, recommendation })) } });
+          if (!off) setSaved(`${r.saved}/${r.total} memories written · ${new Date(r.at).toLocaleTimeString()}`);
+        }
+        const q = vulns.length ? `Penetration Monkey flight recommendation for ${vulns.slice(0, 5).map((v) => v.title).join("; ")}` : "Penetration Monkey flight recommendation";
+        const res = await recall({ data: { query: q } });
+        if (!off) setHits(res.hits);
+      } catch (e) {
+        if (!off) setErr(String(e));
+      } finally {
+        if (!off) setBusy(false);
+      }
+    })();
+    return () => {
+      off = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runKey]);
+
+  const field = (t: string, k: string) => t.match(new RegExp(`${k}="([^"]*)"`))?.[1] ?? t.match(new RegExp(`${k}=(\\S+)`))?.[1] ?? "";
+
+  return (
+    <section className="rounded-md border border-violet-500/30 bg-black/40">
+      <div className="flex items-center justify-between border-b border-violet-500/20 px-4 py-2">
+        <div className="text-xs uppercase tracking-widest text-violet-300">surrealdb · memory flight recorder</div>
+        <div className="text-[10px] uppercase tracking-widest text-zinc-500">{busy ? "recalling…" : saved ?? (runKey ? "" : "no run recorded yet")}</div>
+      </div>
+      <div className="space-y-2 px-4 py-3 text-xs">
+        {err && <div className="text-rose-400">{err}</div>}
+        {!busy && hits.length === 0 && !err && <div className="text-zinc-500">No past flights in memory yet.</div>}
+        {hits.map((h) => (
+          <div key={h.id} className="rounded-sm border border-zinc-800 bg-black/60 p-2">
+            <div className="flex justify-between text-[10px] text-zinc-500">
+              <span>{field(h.text, "target")} · {field(h.text, "mode")} · {field(h.text, "severity")}</span>
+              <span>{h.at ? new Date(h.at).toLocaleString() : ""} · score {h.score.toFixed(2)}</span>
+            </div>
+            <div className="mt-1 text-zinc-200">{field(h.text, "title") || h.text}</div>
+            {field(h.text, "recommendation") && <div className="mt-1 text-violet-200/90">→ {field(h.text, "recommendation")}</div>}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Briefer({ realTarget, runDone, compliance, result }: { realTarget: string | null; runDone: boolean; compliance: ComplianceResult | null; result: DaytonaResult | null }) {
   const speak = useServerFn(speakBriefing);
   const [voiceBusy, setVoiceBusy] = useState(false);
@@ -589,6 +652,12 @@ function Briefer({ realTarget, runDone, compliance, result }: { realTarget: stri
 
   return (
     <div className="mt-8 space-y-6">
+      <FlightRecorder
+        runKey={realTarget ? (compliance ? `real:${compliance.finalUrl}:${compliance.ms}` : null) : runDone && result ? `sim:${result.sandboxId}` : null}
+        target={realTarget ?? (result ? `sandbox://${result.sandboxId}` : "")}
+        mode={realTarget ? "real" : "simulated"}
+        vulns={vulns}
+      />
       <section className="flex flex-wrap items-center gap-3 rounded-md border border-emerald-500/30 bg-black/40 px-4 py-3">
         <button
           onClick={readAloud}
