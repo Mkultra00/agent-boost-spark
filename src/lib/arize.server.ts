@@ -30,7 +30,7 @@ export async function sendFlightToArize(opts: {
 }): Promise<{ sent: boolean; traceId: string; spanCount: number; error?: string; projectName: string }> {
   const apiKey = process.env["ARIZE_API_KEY"];
   const spaceId = process.env["ARIZE_SPACE_ID"];
-  const projectName = "agentredteam";
+  const projectName = "penetrationmonkey";
   const traceId = hex(16);
   if (!apiKey || !spaceId) {
     return { sent: false, traceId, spanCount: 0, projectName, error: "ARIZE_API_KEY or ARIZE_SPACE_ID missing" };
@@ -99,7 +99,7 @@ export async function sendFlightToArize(opts: {
         },
         scopeSpans: [
           {
-            scope: { name: "agentredteam.flight" },
+            scope: { name: "penetrationmonkey.flight" },
             spans,
           },
         ],

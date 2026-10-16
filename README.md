@@ -1,8 +1,8 @@
-# AgentRedTeam
+# Penetration Monkey
 
 > Autonomous red-teaming for AI agents — sandboxed in Daytona, traced in Arize, remembered in SurrealDB.
 
-AgentRedTeam deploys a swarm of attacker agents against a target AI agent inside an isolated sandbox. Every prompt, tool call, and response is captured as a trace span, and every confirmed exploit is produced as a **trace-backed vulnerability report** that can be re-tested after a fix.
+Penetration Monkey deploys a swarm of attacker agents against a target AI agent inside an isolated sandbox. Every prompt, tool call, and response is captured as a trace span, and every confirmed exploit is produced as a **trace-backed vulnerability report** that can be re-tested after a fix.
 
 > **Status:** Hackathon prototype (Daytona HackSprint × Arize AI, NYC, October 2026). The current UI runs on simulated data; sponsor integrations are in progress.
 
@@ -69,8 +69,8 @@ AgentRedTeam deploys a swarm of attacker agents against a target AI agent inside
 ### Install and run
 
 ```bash
-git clone <your-repo-url> agentredteam
-cd agentredteam
+git clone <your-repo-url> penetration-monkey
+cd penetration-monkey
 bun install
 bun run dev
 ```
@@ -112,7 +112,7 @@ src/
 
 ## Security
 
-AgentRedTeam is meant **only** for systems you own or are explicitly authorized to test. Attacks must run inside the sandbox, with egress restricted to an allowlist. Report vulnerabilities in this project privately to the maintainers instead of opening a public issue.
+Penetration Monkey is meant **only** for systems you own or are explicitly authorized to test. Attacks must run inside the sandbox, with egress restricted to an allowlist. Report vulnerabilities in this project privately to the maintainers instead of opening a public issue.
 
 ## Contributing
 

@@ -59,7 +59,7 @@ export const scanCompliance = createServerFn({ method: "POST" })
 
     const response = await fetch(data.url, {
       redirect: "follow",
-      headers: { "User-Agent": "AgentRedTeam-Compliance/1.0" },
+      headers: { "User-Agent": "PenetrationMonkey-Compliance/1.0" },
     });
     const headers: Record<string, string> = {};
     response.headers.forEach((v, k) => (headers[k.toLowerCase()] = v));
