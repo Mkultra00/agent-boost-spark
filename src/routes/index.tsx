@@ -240,15 +240,25 @@ function Index() {
     <div className="min-h-screen bg-[#07090d] text-zinc-200 font-mono">
       <div className="mx-auto max-w-6xl px-6 py-10">
         <header className="flex items-center justify-between border-b border-zinc-800 pb-6">
-          <div>
-            <div className="text-xs tracking-[0.3em] text-emerald-400">PENETRATION MONKEY</div>
-            <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
-              Autonomous red-team for AI agents
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              Attacker agents probe a target inside Daytona sandboxes. Every action traced in
-              Arize. Every memory in SurrealDB. Output: a trace-backed vulnerability report.
-            </p>
+          <div className="flex items-center gap-6">
+            <img
+              src={mascot}
+              alt="Penetration Monkey mascot: a smiling anime girl monkey holding a spear"
+              loading="lazy"
+              width={120}
+              height={120}
+              className="h-[120px] w-[120px] shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/5 object-contain p-1 shadow-[0_0_40px_-8px_rgba(16,185,129,0.5)]"
+            />
+            <div>
+              <div className="text-xs tracking-[0.3em] text-emerald-400">PENETRATION MONKEY</div>
+              <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
+                Autonomous red-team for AI agents
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+                Attacker agents probe a target inside Daytona sandboxes. Every action traced in
+                Arize. Every memory in SurrealDB. Output: a trace-backed vulnerability report.
+              </p>
+            </div>
           </div>
           <div className="hidden gap-2 md:flex">
             <Badge>Daytona</Badge>
