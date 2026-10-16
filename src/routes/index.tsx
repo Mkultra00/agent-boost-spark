@@ -134,6 +134,7 @@ function Index() {
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"console" | "briefer">("console");
   const [compliance, setCompliance] = useState<ComplianceResult | null>(null);
+  const [realTarget, setRealTarget] = useState<string | null>(null);
   const [destroyAt, setDestroyAt] = useState<number | null>(null);
   const [destroyed, setDestroyed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -229,7 +230,7 @@ function Index() {
         </nav>
 
         {tab === "briefer" ? (
-          <Briefer runDone={status === "done"} compliance={compliance} result={result} />
+          <Briefer realTarget={realTarget} runDone={status === "done"} compliance={compliance} result={result} />
         ) : (
           <>
         <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -239,7 +240,12 @@ function Index() {
             sub="daytona workspace"
           />
           <Stat label="arize spans" value={String(spans)} sub="OpenInference" />
-          <Stat label="findings" value={String(findings)} sub="judge-verified" tone="hit" />
+          <Stat
+            label="findings"
+            value={realTarget ? (compliance ? String(compliance.checks.filter((c) => c.severity === "fail" || c.severity === "warn").length) : "…") : String(findings)}
+            sub={realTarget ? "real site · observed" : "demo · synthetic"}
+            tone="hit"
+          />
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
@@ -327,7 +333,13 @@ $ {s.command}
 
 
 
-        <ComplianceScanner onResult={setCompliance} />
+        <ComplianceScanner
+          onStart={(u) => {
+            setRealTarget(u);
+            setCompliance(null);
+          }}
+          onResult={setCompliance}
+        />
 
         <section className="mt-8 overflow-hidden rounded-md border border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs uppercase tracking-widest text-zinc-500">
@@ -408,7 +420,7 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   }
 }
 
-function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance: ComplianceResult | null; result: DaytonaResult | null }) {
+function Briefer({ realTarget, runDone, compliance, result }: { realTarget: string | null; runDone: boolean; compliance: ComplianceResult | null; result: DaytonaResult | null }) {
   const speak = useServerFn(speakBriefing);
   const [voiceBusy, setVoiceBusy] = useState(false);
   const [voiceErr, setVoiceErr] = useState<string | null>(null);
@@ -416,9 +428,11 @@ function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance
 
   // Real website scanned → only real, observed findings. Simulation only when no real target.
   const vulns = useMemo(() => {
-    const list: Vuln[] = compliance ? complianceVulns(compliance) : runDone ? SANDBOX_VULNS : [];
+    const list: Vuln[] = realTarget
+      ? compliance ? complianceVulns(compliance) : []
+      : runDone ? SANDBOX_VULNS : [];
     return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
-  }, [runDone, compliance]);
+  }, [realTarget, runDone, compliance]);
 
   const counts = useMemo(() => {
     const c = { critical: 0, high: 0, medium: 0, low: 0 };
@@ -429,8 +443,8 @@ function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance
   const sevColor = (s: Vuln["severity"]) =>
     s === "critical" ? "text-rose-400 border-rose-500/40" : s === "high" ? "text-orange-400 border-orange-500/40" : s === "medium" ? "text-amber-400 border-amber-500/40" : "text-zinc-400 border-zinc-700";
 
-  const arize = result?.arize;
-  const flight = result?.steps ?? [];
+  const arize = realTarget ? undefined : result?.arize;
+  const flight = realTarget ? [] : (result?.steps ?? []);
 
   const narration = useMemo(() => {
     if (vulns.length === 0) return "";
@@ -554,7 +568,7 @@ function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance
   );
 }
 
-function ComplianceScanner({ onResult }: { onResult: (r: ComplianceResult | null) => void }) {
+function ComplianceScanner({ onStart, onResult }: { onStart: (url: string) => void; onResult: (r: ComplianceResult | null) => void }) {
   const scan = useServerFn(scanCompliance);
   const [url, setUrl] = useState("https://");
   const [authorized, setAuthorized] = useState(false);
@@ -567,6 +581,7 @@ function ComplianceScanner({ onResult }: { onResult: (r: ComplianceResult | null
     setBusy(true);
     setErr(null);
     setRes(null);
+    onStart(url);
     onResult(null);
     try {
       const r = await scan({ data: { url } });
