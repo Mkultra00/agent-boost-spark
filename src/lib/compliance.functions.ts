@@ -18,30 +18,32 @@ export type ComplianceResult = {
   htmlSnippet: string;
 };
 
-async function anchorFetch(url: string, key: string): Promise<Response | null> {
-  // Anchor Browser session + navigate; falls back to direct fetch on any failure.
+async function anchorRender(url: string, key: string): Promise<string | null> {
+  // Real browser render via Anchor; returns rendered HTML or null.
+  let id: string | undefined;
   try {
     const s = await fetch("https://api.anchorbrowser.io/v1/sessions", {
       method: "POST",
       headers: { "anchor-api-key": key, "Content-Type": "application/json" },
-      body: JSON.stringify({ session: { recording: { active: false } } }),
+      body: JSON.stringify({}),
     });
     if (!s.ok) return null;
-    const sj = (await s.json()) as { data?: { id?: string } };
-    const id = sj.data?.id;
+    id = ((await s.json()) as { data?: { id?: string } }).data?.id;
     if (!id) return null;
-    const r = await fetch(
-      `https://api.anchorbrowser.io/v1/tools/fetch-webpage?sessionId=${id}`,
-      {
-        method: "POST",
-        headers: { "anchor-api-key": key, "Content-Type": "application/json" },
-        body: JSON.stringify({ url, format: "html" }),
-      },
-    );
-    if (!r.ok) return null;
-    return r;
+    const r = await fetch(`https://api.anchorbrowser.io/v1/tools/fetch-webpage?sessionId=${id}`, {
+      method: "POST",
+      headers: { "anchor-api-key": key, "Content-Type": "application/json" },
+      body: JSON.stringify({ url, format: "html" }),
+    });
+    return r.ok ? await r.text() : null;
   } catch {
     return null;
+  } finally {
+    if (id)
+      await fetch(`https://api.anchorbrowser.io/v1/sessions/${id}`, {
+        method: "DELETE",
+        headers: { "anchor-api-key": key },
+      }).catch(() => {});
   }
 }
 
@@ -55,23 +57,24 @@ export const scanCompliance = createServerFn({ method: "POST" })
     const t0 = Date.now();
     const anchorKey = process.env["ANCHOR_API_KEY"];
 
-    let via: "anchor" | "direct" = "direct";
-    let response: Response | null = null;
-    if (anchorKey) {
-      response = await anchorFetch(data.url, anchorKey);
-      if (response) via = "anchor";
-    }
-    if (!response) {
-      response = await fetch(data.url, {
-        redirect: "follow",
-        headers: { "User-Agent": "AgentRedTeam-Compliance/1.0" },
-      });
-    }
-
+    const response = await fetch(data.url, {
+      redirect: "follow",
+      headers: { "User-Agent": "AgentRedTeam-Compliance/1.0" },
+    });
     const headers: Record<string, string> = {};
     response.headers.forEach((v, k) => (headers[k.toLowerCase()] = v));
-    const body = await response.text();
+    const directBody = await response.text();
     const finalUrl = response.url || data.url;
+
+    let via: "anchor" | "direct" = "direct";
+    let body = directBody;
+    if (anchorKey) {
+      const rendered = await anchorRender(finalUrl, anchorKey);
+      if (rendered) {
+        body = rendered;
+        via = "anchor";
+      }
+    }
     const u = new URL(finalUrl);
 
     const checks: ComplianceCheck[] = [];
