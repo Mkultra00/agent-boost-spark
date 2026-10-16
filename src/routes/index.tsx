@@ -370,6 +370,7 @@ $ {s.command}
           onStart={(u) => {
             setRealTarget(u);
             setCompliance(null);
+            startRun();
           }}
           onResult={setCompliance}
         />
