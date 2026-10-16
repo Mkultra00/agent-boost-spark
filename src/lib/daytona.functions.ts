@@ -1,4 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
+import { sendFlightToArize } from "./arize.server";
+
+function agentFor(label: string): string {
+  if (label.startsWith("recon")) return "RECON";
+  if (label.startsWith("plant") || label.startsWith("memory")) return "MEMORY";
+  if (label.startsWith("injection") || label.startsWith("attacker")) return "INJECTOR";
+  if (label.startsWith("target")) return "TARGET";
+  if (label.startsWith("exfil")) return "EXFIL";
+  if (label.startsWith("judge")) return "JUDGE";
+  return "ORCHESTRATOR";
+}
 
 const API = "https://app.daytona.io/api";
 
@@ -107,9 +118,25 @@ export const runDaytonaProbe = createServerFn({ method: "POST" }).handler(async 
     headers: { Authorization: `Bearer ${token}` },
   });
 
+  const totalMs = Date.now() - started;
+  const arize = await sendFlightToArize({
+    runName: "red-team.flight",
+    sandboxId: id,
+    totalMs,
+    steps: steps.map((s) => ({
+      label: s.label,
+      agent: agentFor(s.label),
+      command: s.command,
+      output: s.output,
+      exitCode: s.exitCode,
+      ms: s.ms,
+    })),
+  });
+
   return {
     sandboxId: id,
-    totalMs: Date.now() - started,
+    totalMs,
     steps,
+    arize,
   };
 });

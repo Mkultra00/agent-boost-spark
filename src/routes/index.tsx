@@ -213,7 +213,7 @@ function Index() {
         </nav>
 
         {tab === "briefer" ? (
-          <Briefer runDone={status === "done"} compliance={compliance} />
+          <Briefer runDone={status === "done"} compliance={compliance} result={result} />
         ) : (
           <>
         <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -392,7 +392,7 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   }
 }
 
-function Briefer({ runDone, compliance }: { runDone: boolean; compliance: ComplianceResult | null }) {
+function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance: ComplianceResult | null; result: DaytonaResult | null }) {
   const vulns = useMemo(() => {
     const list: Vuln[] = [...(runDone ? SANDBOX_VULNS : []), ...(compliance ? complianceVulns(compliance) : [])];
     return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
@@ -407,38 +407,83 @@ function Briefer({ runDone, compliance }: { runDone: boolean; compliance: Compli
   const sevColor = (s: Vuln["severity"]) =>
     s === "critical" ? "text-rose-400 border-rose-500/40" : s === "high" ? "text-orange-400 border-orange-500/40" : s === "medium" ? "text-amber-400 border-amber-500/40" : "text-zinc-400 border-zinc-700";
 
+  const arize = result?.arize;
+  const flight = result?.steps ?? [];
+
   return (
-    <section className="mt-8 rounded-md border border-zinc-800 bg-black/40">
-      <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
-        <span className="text-xs uppercase tracking-widest text-zinc-400">exec briefer · vulnerabilities & recommendations</span>
-        <span className="text-[10px] uppercase tracking-widest text-zinc-600">
-          {counts.critical} critical · {counts.high} high · {counts.medium} medium · {counts.low} low
-        </span>
-      </div>
-      {vulns.length === 0 ? (
-        <div className="p-6 text-xs text-zinc-500">
-          No findings yet. Wait for the sandbox run to finish, or run a compliance scan on the console tab.
+    <div className="mt-8 space-y-6">
+      <section className="rounded-md border border-fuchsia-500/30 bg-black/40">
+        <div className="flex items-center justify-between border-b border-fuchsia-500/20 px-4 py-2">
+          <span className="text-xs uppercase tracking-widest text-fuchsia-300">
+            agent flight · arize trace
+          </span>
+          <span className="text-[10px] uppercase tracking-widest text-zinc-500">
+            {arize?.sent
+              ? `sent ${arize.spanCount} spans · project ${arize.projectName}`
+              : arize
+                ? `not sent · ${arize.error}`
+                : "awaiting run…"}
+          </span>
         </div>
-      ) : (
-        <div className="divide-y divide-zinc-800/70">
-          {vulns.map((v) => (
-            <div key={v.id} className="grid grid-cols-1 gap-2 p-4 md:grid-cols-[110px_1fr]">
-              <div>
-                <span className={`inline-block rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-widest ${sevColor(v.severity)}`}>
-                  {v.severity}
-                </span>
-                <div className="mt-1 text-[10px] text-zinc-600">{v.id} · {v.source}</div>
-              </div>
-              <div>
-                <div className="text-sm text-zinc-100">{v.title}</div>
-                <div className="mt-1 text-xs text-zinc-500">evidence: {v.evidence}</div>
-                <div className="mt-2 text-xs text-emerald-300/90">→ {v.recommendation}</div>
-              </div>
-            </div>
-          ))}
+        {arize?.traceId && (
+          <div className="border-b border-zinc-800 px-4 py-2 text-[11px] text-zinc-500">
+            trace_id <span className="text-fuchsia-300">{arize.traceId}</span>
+            {" · "}open in Arize → projects / {arize.projectName} / traces
+          </div>
+        )}
+        {flight.length === 0 ? (
+          <div className="p-6 text-xs text-zinc-500">Flight will appear once the sandbox run completes.</div>
+        ) : (
+          <ol className="divide-y divide-zinc-800/70">
+            {flight.map((s, i) => {
+              const agent = AGENT_BY_LABEL(s.label);
+              return (
+                <li key={i} className="grid grid-cols-[36px_90px_1fr_80px] gap-2 px-4 py-2 text-[11px]">
+                  <span className="text-zinc-600">{String(i + 1).padStart(2, "0")}</span>
+                  <span className={agentColor(agent)}>{agent}</span>
+                  <span className="truncate text-zinc-300">{s.label}</span>
+                  <span className="text-right text-zinc-600">
+                    {s.ms}ms · exit {s.exitCode}
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+        )}
+      </section>
+
+      <section className="rounded-md border border-zinc-800 bg-black/40">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2">
+          <span className="text-xs uppercase tracking-widest text-zinc-400">vulnerabilities & recommendations</span>
+          <span className="text-[10px] uppercase tracking-widest text-zinc-600">
+            {counts.critical} critical · {counts.high} high · {counts.medium} medium · {counts.low} low
+          </span>
         </div>
-      )}
-    </section>
+        {vulns.length === 0 ? (
+          <div className="p-6 text-xs text-zinc-500">
+            No findings yet. Wait for the sandbox run to finish, or run a compliance scan on the console tab.
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-800/70">
+            {vulns.map((v) => (
+              <div key={v.id} className="grid grid-cols-1 gap-2 p-4 md:grid-cols-[110px_1fr]">
+                <div>
+                  <span className={`inline-block rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-widest ${sevColor(v.severity)}`}>
+                    {v.severity}
+                  </span>
+                  <div className="mt-1 text-[10px] text-zinc-600">{v.id} · {v.source}</div>
+                </div>
+                <div>
+                  <div className="text-sm text-zinc-100">{v.title}</div>
+                  <div className="mt-1 text-xs text-zinc-500">evidence: {v.evidence}</div>
+                  <div className="mt-2 text-xs text-emerald-300/90">→ {v.recommendation}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
 
