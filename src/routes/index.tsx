@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { runDaytonaProbe } from "@/lib/daytona.functions";
 import { scanCompliance, type ComplianceResult } from "@/lib/compliance.functions";
+import { speakBriefing } from "@/lib/voice.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -393,6 +394,11 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
 }
 
 function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance: ComplianceResult | null; result: DaytonaResult | null }) {
+  const speak = useServerFn(speakBriefing);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [voiceErr, setVoiceErr] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   const vulns = useMemo(() => {
     const list: Vuln[] = [...(runDone ? SANDBOX_VULNS : []), ...(compliance ? complianceVulns(compliance) : [])];
     return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
@@ -410,8 +416,53 @@ function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance
   const arize = result?.arize;
   const flight = result?.steps ?? [];
 
+  const narration = useMemo(() => {
+    if (vulns.length === 0) return "";
+    const lines = [
+      `Agent red team briefing. ${vulns.length} findings: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low.`,
+      arize?.sent ? `The agent flight was recorded in Arize with ${arize.spanCount} spans.` : "",
+      ...vulns.slice(0, 8).map(
+        (v, i) =>
+          `Finding ${i + 1}, ${v.severity} severity, from the ${v.source}. ${v.title}. Evidence: ${v.evidence}. Recommendation: ${v.recommendation}`,
+      ),
+      "End of briefing.",
+    ];
+    return lines.filter(Boolean).join(" ");
+  }, [vulns, counts, arize]);
+
+  const readAloud = async () => {
+    setVoiceErr(null);
+    setVoiceBusy(true);
+    try {
+      const r = await speak({ data: { text: narration } });
+      const el = audioRef.current;
+      if (el) {
+        el.src = `data:audio/mpeg;base64,${r.audioContent}`;
+        await el.play();
+      }
+    } catch (e) {
+      setVoiceErr(String(e));
+    } finally {
+      setVoiceBusy(false);
+    }
+  };
+
   return (
     <div className="mt-8 space-y-6">
+      <section className="flex flex-wrap items-center gap-3 rounded-md border border-emerald-500/30 bg-black/40 px-4 py-3">
+        <button
+          onClick={readAloud}
+          disabled={voiceBusy || narration.length === 0}
+          className="rounded-sm border border-emerald-500 bg-emerald-500/10 px-4 py-2 text-xs uppercase tracking-widest text-emerald-300 disabled:opacity-40"
+        >
+          {voiceBusy ? "synthesizing…" : "▶ read briefing aloud"}
+        </button>
+        <span className="text-[10px] uppercase tracking-widest text-zinc-500">
+          elevenlabs voice · george
+        </span>
+        <audio ref={audioRef} controls className="ml-auto h-8" />
+        {voiceErr && <div className="w-full text-[11px] text-rose-400">{voiceErr}</div>}
+      </section>
       <section className="rounded-md border border-fuchsia-500/30 bg-black/40">
         <div className="flex items-center justify-between border-b border-fuchsia-500/20 px-4 py-2">
           <span className="text-xs uppercase tracking-widest text-fuchsia-300">
