@@ -259,15 +259,6 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Card({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-zinc-800 bg-black/40 p-5">
-      <div className="text-xs text-emerald-400">{n}</div>
-      <div className="mt-1 text-lg font-semibold text-white">{title}</div>
-      <div className="mt-2 text-sm leading-relaxed text-zinc-400">{children}</div>
-    </div>
-  );
-}
 
 function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   switch (a) {
