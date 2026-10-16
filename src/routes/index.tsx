@@ -315,10 +315,27 @@ $ {s.command}
                 );
               })}
               {status === "done" && result && (
-                <div className="mt-2 text-emerald-400">
-                  ✓ FINDING: indirect_prompt_injection → data exfil · evidence=sandbox://
-                  {result.sandboxId.slice(0, 8)}
+                <div className="mt-2 space-y-2">
+                  <div className="text-emerald-400">
+                    ✓ FINDING: indirect_prompt_injection → data exfil · evidence=sandbox://
+                    {result.sandboxId.slice(0, 8)}
+                  </div>
+                  <div className="text-zinc-400">
+                    sandbox id <span className="select-all text-emerald-300">{result.sandboxId}</span>
+                    {" · "}
+                    <a href="https://app.daytona.io/dashboard/sandboxes" target="_blank" rel="noreferrer" className="text-emerald-400 underline">
+                      open in Daytona ↗
+                    </a>
+                  </div>
                 </div>
+              )}
+              {(status === "done" || status === "error") && (
+                <button
+                  onClick={startRun}
+                  className="mt-3 rounded-sm border border-zinc-700 px-4 py-1.5 text-[10px] uppercase tracking-widest text-zinc-400 hover:text-emerald-300"
+                >
+                  ↻ run again
+                </button>
               )}
             </div>
           </div>
