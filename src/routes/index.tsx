@@ -311,7 +311,7 @@ $ {s.command}
 
 
 
-        <ComplianceScanner />
+        <ComplianceScanner onResult={setCompliance} />
 
         <section className="mt-8 overflow-hidden rounded-md border border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs uppercase tracking-widest text-zinc-500">
@@ -322,6 +322,9 @@ $ {s.command}
           </div>
           <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />
         </section>
+          </>
+        )}
+
 
         <footer className="mt-12 border-t border-zinc-800 pt-6 text-xs text-zinc-500">
           hackathon demo · daytona × arize × surrealdb · nyc oct 2026
