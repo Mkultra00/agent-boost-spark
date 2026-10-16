@@ -50,8 +50,8 @@ export const runDaytonaProbe = createServerFn({ method: "POST" }).handler(async 
       body: JSON.stringify({
         snapshot: "daytonaio/sandbox:0.8.0",
         labels: { app: "agentredteam" },
-        autoStopInterval: 5,
-        autoDeleteInterval: 10,
+        autoStopInterval: 15,
+        autoDeleteInterval: 20,
       }),
     },
     token,

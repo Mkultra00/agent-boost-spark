@@ -366,7 +366,7 @@ $ {s.command}
           </div>
           {status === "idle" ? (
             <div className="flex h-[640px] items-center justify-center text-xs text-zinc-500">Swarm starts when you launch an attack.</div>
-          ) : <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />
+          ) : <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />}
         </section>
           </>
         )}
