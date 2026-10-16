@@ -36,9 +36,13 @@ export const speakBriefing = createServerFn({ method: "POST" })
       throw new Error(`ElevenLabs TTS failed [${response.status}]: ${body}`);
     }
 
-    const buf = await response.arrayBuffer();
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
     return {
-      audioContent: Buffer.from(buf).toString("base64"),
+      audioContent: btoa(bin),
       chars: text.length,
     };
   });
