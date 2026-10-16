@@ -250,7 +250,9 @@ function Index() {
               className="h-[120px] w-[120px] shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/5 object-contain p-1 shadow-[0_0_40px_-8px_rgba(16,185,129,0.5)]"
             />
             <div>
-              <div className="text-xs tracking-[0.3em] text-emerald-400">PENETRATION MONKEY</div>
+              <div className="text-[36px] leading-[1.1] tracking-[0.12em] font-bold text-emerald-400">
+                PENETRATION MONKEY
+              </div>
               <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
                 Autonomous red-team for AI agents
               </h1>
