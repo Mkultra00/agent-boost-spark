@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { runDaytonaProbe, destroyDaytonaSandbox } from "@/lib/daytona.functions";
 import { scanCompliance, type ComplianceResult } from "@/lib/compliance.functions";
 import { speakBriefing } from "@/lib/voice.functions";
+import mascot from "@/assets/monkey-mascot.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
