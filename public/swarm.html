@@ -384,6 +384,8 @@ catch(e){ fail(); return; }
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
 renderer.setClearColor(0x01050b, 1);
 $('#stage').appendChild(renderer.domElement);
+const stageEl = $('#stage');
+function view(){ const r = stageEl.getBoundingClientRect(); return { w: Math.max(1, r.width), h: Math.max(1, r.height), l: r.left, t: r.top }; }
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 800);
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -392,7 +394,7 @@ controls.minDistance = 14; controls.maxDistance = 160; controls.enablePan = fals
 controls.rotateSpeed = 0.6; controls.zoomSpeed = 0.8;
 const SC = Math.max(1, Math.sqrt(CFG.agents.length / 7));
 function defaultView(){
-  const a = window.innerWidth / window.innerHeight;
+  const v = view(); const a = v.w / v.h;
   const d = (a < 0.7 ? 66 : a < 1.1 ? 50 : 38) * SC;
   camera.position.set(0, d*0.34, d);
   controls.target.set(0, isMobile() ? -1.5 : 0, 0);
@@ -409,9 +411,9 @@ try {
   }
 } catch(e){ composer = null; bloom = null; }
 function resize(){
-  const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h); if (composer) composer.setSize(w, h);
-  camera.aspect = w / h; camera.updateProjectionMatrix(); sizeSpark();
+  const v = view();
+  renderer.setSize(v.w, v.h); if (composer) composer.setSize(v.w, v.h);
+  camera.aspect = v.w / v.h; camera.updateProjectionMatrix(); sizeSpark();
 }
 
 /* ---------------- shared materials ---------------- */
@@ -920,7 +922,7 @@ function addLabel(n){
 addLabel(PRIME); agents.forEach(addLabel); tools.forEach(addLabel);
 const proj = new V3();
 function updateLabels(){
-  const w = window.innerWidth, h = window.innerHeight, camD = camera.position.length();
+  const v = view(); const w = v.w, h = v.h, camD = camera.position.length();
   for (const L of labels){
     const n = L.n;
     proj.copy(n.pos); if (L.off) proj.add(L.off);
@@ -929,7 +931,7 @@ function updateLabels(){
     proj.project(camera);
     if (proj.z > 1 || proj.x < -1.2 || proj.x > 1.2 || proj.y < -1.2 || proj.y > 1.2) { L.el.style.display = 'none'; continue; }
     L.el.style.display = '';
-    const x = (proj.x*0.5 + 0.5)*w, y = (-proj.y*0.5 + 0.5)*h;
+    const x = (proj.x*0.5 + 0.5)*w + v.l, y = (-proj.y*0.5 + 0.5)*h + v.t;
     const dx = n.kind === 'prime' ? '-50%' : (n.kind === 'sub' ? '8px' : '14px');
     L.el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) translate(${dx},-50%)`;
     L.el.classList.toggle('far', far);
@@ -965,7 +967,7 @@ let downX = 0, downY = 0;
 renderer.domElement.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; });
 renderer.domElement.addEventListener('pointerup', e => {
   if (Math.hypot(e.clientX-downX, e.clientY-downY) > 6) return;
-  mouse.set(e.clientX/window.innerWidth*2-1, -(e.clientY/window.innerHeight)*2+1);
+  const v = view(); mouse.set((e.clientX-v.l)/v.w*2-1, -((e.clientY-v.t)/v.h)*2+1);
   ray.setFromCamera(mouse, camera);
   const hits = ray.intersectObjects(hitMeshes, false);
   const hit = hits.find(h => h.object.userData.node && !(h.object.userData.node.kind === 'sub' && h.object.userData.node.dying));
