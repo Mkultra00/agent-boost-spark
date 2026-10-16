@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { runDaytonaProbe } from "@/lib/daytona.functions";
+import { scanCompliance, type ComplianceResult } from "@/lib/compliance.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -200,6 +201,8 @@ $ {s.command}
 
 
 
+        <ComplianceScanner />
+
         <section className="mt-8 overflow-hidden rounded-md border border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs uppercase tracking-widest text-zinc-500">
             <span>holographic swarm</span>
@@ -274,4 +277,90 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
     default:
       return "text-emerald-400";
   }
+}
+
+function ComplianceScanner() {
+  const scan = useServerFn(scanCompliance);
+  const [url, setUrl] = useState("https://");
+  const [authorized, setAuthorized] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [res, setRes] = useState<ComplianceResult | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setErr(null);
+    setRes(null);
+    try {
+      setRes(await scan({ data: { url } }));
+    } catch (x) {
+      setErr(x instanceof Error ? x.message : String(x));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const tone = (s: string) =>
+    s === "pass"
+      ? "text-emerald-400"
+      : s === "fail"
+        ? "text-rose-400"
+        : s === "warn"
+          ? "text-amber-400"
+          : "text-zinc-400";
+  const fails = res?.checks.filter((c) => c.severity === "fail").length ?? 0;
+  const warns = res?.checks.filter((c) => c.severity === "warn").length ?? 0;
+
+  return (
+    <section className="mt-8 rounded-md border border-sky-500/30 bg-black/40">
+      <div className="border-b border-sky-500/20 px-4 py-2 text-xs uppercase tracking-widest text-sky-300">
+        compliance pen test · real target
+      </div>
+      <form onSubmit={run} className="flex flex-col gap-3 p-4 md:flex-row md:items-center">
+        <input
+          type="url"
+          required
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://your-site.com"
+          className="flex-1 rounded-sm border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-sky-500"
+        />
+        <label className="flex items-center gap-2 text-xs text-zinc-400">
+          <input
+            type="checkbox"
+            checked={authorized}
+            onChange={(e) => setAuthorized(e.target.checked)}
+          />
+          I own / am authorized to test this site
+        </label>
+        <button
+          type="submit"
+          disabled={!authorized || busy}
+          className="rounded-sm border border-sky-500 bg-sky-500/10 px-4 py-2 text-xs uppercase tracking-widest text-sky-300 disabled:opacity-40"
+        >
+          {busy ? "scanning…" : "run scan"}
+        </button>
+      </form>
+      {err && <div className="px-4 pb-4 text-xs text-rose-400">error: {err}</div>}
+      {res && (
+        <div className="border-t border-zinc-800 p-4 text-xs">
+          <div className="mb-3 text-zinc-500">
+            {res.finalUrl} · HTTP {res.status} · {res.ms}ms · via {res.via} ·{" "}
+            <span className="text-rose-400">{fails} fail</span> ·{" "}
+            <span className="text-amber-400">{warns} warn</span>
+          </div>
+          <div className="space-y-1">
+            {res.checks.map((c) => (
+              <div key={c.id} className="grid grid-cols-[60px_200px_1fr] gap-2">
+                <span className={`uppercase ${tone(c.severity)}`}>{c.severity}</span>
+                <span className="text-zinc-300">{c.label}</span>
+                <span className="break-all text-zinc-500">{c.detail}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
