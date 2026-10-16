@@ -57,6 +57,26 @@ function Index() {
   const [tick, setTick] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const daytonaProbe = useServerFn(runDaytonaProbe);
+  const [daytonaRunning, setDaytonaRunning] = useState(false);
+  const [daytonaResult, setDaytonaResult] = useState<null | Awaited<ReturnType<typeof runDaytonaProbe>>>(null);
+  const [daytonaError, setDaytonaError] = useState<string | null>(null);
+
+  const runLive = async () => {
+    setDaytonaRunning(true);
+    setDaytonaError(null);
+    setDaytonaResult(null);
+    try {
+      const r = await daytonaProbe();
+      setDaytonaResult(r);
+    } catch (e) {
+      setDaytonaError(String(e));
+    } finally {
+      setDaytonaRunning(false);
+    }
+  };
+
+
   useEffect(() => {
     if (!running) return;
     if (tick >= SCRIPT.length) {
