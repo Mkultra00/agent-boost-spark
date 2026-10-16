@@ -4,7 +4,7 @@
 > probes in disposable sandboxes, traces every step, and remembers findings so a re-scan shows
 > what changed.
 
-Built at the **Daytona HackSprint w/ Arize AI, NYC, October 2026.** Team: Om Thakur, Frank Yu.
+Built at the **Daytona HackSprint w/ Arize AI, NYC, October 2026.** Team: Om Thakur, Frank Yu, Tom Kang.
 
 ---
 
@@ -124,3 +124,4 @@ public/
 
 - **Om Thakur** (NYU Computer Engineering) — integrations, scanner, build.
 - **Frank Yu** — agent-pentest methodology (threat model, canary success criteria, control mapping).
+- **Tom Kang** — collaborator.
