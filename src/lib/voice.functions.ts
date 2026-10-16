@@ -5,7 +5,7 @@ export type VoiceBriefInput = { text: string; voiceId?: string };
 export const speakBriefing = createServerFn({ method: "POST" })
   .inputValidator((d: VoiceBriefInput) => d)
   .handler(async ({ data }) => {
-    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const apiKey = process.env["ELEVENLABS_API_KEY"];
     if (!apiKey) throw new Error("ElevenLabs is not connected to this project");
 
     const voiceId = data.voiceId || "JBFqnCBsd6RMkjVDRZzb"; // George
