@@ -135,6 +135,19 @@ function Index() {
   const [tab, setTab] = useState<"console" | "briefer">("console");
   const [compliance, setCompliance] = useState<ComplianceResult | null>(null);
   const [realTarget, setRealTarget] = useState<string | null>(null);
+  const realSteps: Step[] = useMemo(
+    () =>
+      compliance
+        ? compliance.checks.map((c) => ({
+            label: `recon · ${c.label}`,
+            command: `GET ${compliance.finalUrl} · check ${c.id} · via ${compliance.via}`,
+            output: `${c.severity.toUpperCase()}: ${c.detail}`,
+            exitCode: c.severity === "fail" ? 1 : 0,
+            ms: 0,
+          }) as Step)
+        : [],
+    [compliance],
+  );
   const [destroyAt, setDestroyAt] = useState<number | null>(null);
   const [destroyed, setDestroyed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -174,14 +187,15 @@ function Index() {
   }, [result, destroyed, destroySandbox]);
 
   useEffect(() => {
-    if (!result) return;
-    if (visible >= result.steps.length) {
+    const steps = realTarget ? (compliance ? realSteps : null) : result?.steps;
+    if (!steps) return;
+    if (visible >= steps.length) {
       setStatus("done");
       return;
     }
     const id = setTimeout(() => setVisible((n) => n + 1), 700);
     return () => clearTimeout(id);
-  }, [result, visible]);
+  }, [result, realSteps, realTarget, compliance, visible]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
