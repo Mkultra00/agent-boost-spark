@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { runDaytonaProbe } from "@/lib/daytona.functions";
+import { runDaytonaProbe, destroyDaytonaSandbox } from "@/lib/daytona.functions";
 import { scanCompliance, type ComplianceResult } from "@/lib/compliance.functions";
 import { speakBriefing } from "@/lib/voice.functions";
 
