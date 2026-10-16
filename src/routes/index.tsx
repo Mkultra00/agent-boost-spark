@@ -253,7 +253,7 @@ function Index() {
                 {status === "running" && `step ${visible}/${result?.steps.length ?? 0}`}
                 {status === "done" &&
                   result &&
-                  `complete · ${result.totalMs}ms · sandbox destroyed`}
+                  `complete · ${result.totalMs}ms · ${destroyed ? "sandbox destroyed" : `sandbox alive · destroys ${destroyAt ? new Date(destroyAt).toLocaleTimeString() : "in 2m"}`}`}
                 {status === "error" && "error"}
               </div>
             </div>
@@ -414,8 +414,9 @@ function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance
   const [voiceErr, setVoiceErr] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Real website scanned → only real, observed findings. Simulation only when no real target.
   const vulns = useMemo(() => {
-    const list: Vuln[] = [...(runDone ? SANDBOX_VULNS : []), ...(compliance ? complianceVulns(compliance) : [])];
+    const list: Vuln[] = compliance ? complianceVulns(compliance) : runDone ? SANDBOX_VULNS : [];
     return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
   }, [runDone, compliance]);
 
