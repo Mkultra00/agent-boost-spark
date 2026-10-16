@@ -127,12 +127,15 @@ const SEV_ORDER: Record<Vuln["severity"], number> = { critical: 0, high: 1, medi
 
 function Index() {
   const daytonaProbe = useServerFn(runDaytonaProbe);
+  const destroySandbox = useServerFn(destroyDaytonaSandbox);
   const [result, setResult] = useState<DaytonaResult | null>(null);
   const [visible, setVisible] = useState(0);
   const [status, setStatus] = useState<"booting" | "running" | "done" | "error">("booting");
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"console" | "briefer">("console");
   const [compliance, setCompliance] = useState<ComplianceResult | null>(null);
+  const [destroyAt, setDestroyAt] = useState<number | null>(null);
+  const [destroyed, setDestroyed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
@@ -145,12 +148,24 @@ function Index() {
         const r = await daytonaProbe();
         setResult(r);
         setStatus("running");
+        setDestroyAt(Date.now() + 120_000);
       } catch (e) {
         setError(String(e));
         setStatus("error");
       }
     })();
   }, [daytonaProbe]);
+
+  // Hold the sandbox open for 2 min after the scenario completes, then destroy.
+  useEffect(() => {
+    if (!result || destroyed) return;
+    const t = setTimeout(() => {
+      destroySandbox({ data: { id: result.sandboxId } })
+        .catch(() => {})
+        .finally(() => setDestroyed(true));
+    }, 120_000);
+    return () => clearTimeout(t);
+  }, [result, destroyed, destroySandbox]);
 
   useEffect(() => {
     if (!result) return;
