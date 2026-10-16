@@ -135,6 +135,19 @@ function Index() {
   const [tab, setTab] = useState<"console" | "briefer">("console");
   const [compliance, setCompliance] = useState<ComplianceResult | null>(null);
   const [realTarget, setRealTarget] = useState<string | null>(null);
+  const realSteps: Step[] = useMemo(
+    () =>
+      compliance
+        ? compliance.checks.map((c) => ({
+            label: `recon · ${c.label}`,
+            command: `GET ${compliance.finalUrl} · check ${c.id} · via ${compliance.via}`,
+            output: `${c.severity.toUpperCase()}: ${c.detail}`,
+            exitCode: c.severity === "fail" ? 1 : 0,
+            ms: 0,
+          }) as Step)
+        : [],
+    [compliance],
+  );
   const [destroyAt, setDestroyAt] = useState<number | null>(null);
   const [destroyed, setDestroyed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -148,6 +161,8 @@ function Index() {
     setVisible(0);
     setResult(null);
     setDestroyed(false);
+    setRealTarget(null);
+    setCompliance(null);
     try {
       setStatus("booting");
       const r = await daytonaProbe();
@@ -174,28 +189,51 @@ function Index() {
   }, [result, destroyed, destroySandbox]);
 
   useEffect(() => {
-    if (!result) return;
-    if (visible >= result.steps.length) {
+    const steps = realTarget ? (compliance ? realSteps : null) : result?.steps;
+    if (!steps) return;
+    if (visible >= steps.length) {
       setStatus("done");
       return;
     }
     const id = setTimeout(() => setVisible((n) => n + 1), 700);
     return () => clearTimeout(id);
-  }, [result, visible]);
+  }, [result, realSteps, realTarget, compliance, visible]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [visible, status]);
 
   const shownSteps: Step[] = useMemo(
-    () => (result ? result.steps.slice(0, visible) : []),
-    [result, visible],
+    () => (realTarget ? realSteps.slice(0, visible) : result ? result.steps.slice(0, visible) : []),
+    [result, realSteps, realTarget, visible],
   );
   const findings = useMemo(
     () => shownSteps.filter((s) => /FINDING|exfil|secret/i.test(s.output)).length,
     [shownSteps],
   );
   const spans = shownSteps.length;
+
+  // Real mode: drive the swarm from the real scan checks only.
+  const swarmRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    if (!realTarget || !compliance || visible === 0) return;
+    const c = compliance.checks[visible - 1];
+    if (!c) return;
+    const lead = ["csp", "clickjacking", "permissions", "nosniff"].includes(c.id)
+      ? "INJECTOR"
+      : ["cookies", "forms", "tls", "hsts"].includes(c.id)
+        ? "EXFIL"
+        : "RECON";
+    const bad = c.severity === "fail" || c.severity === "warn";
+    const id = `CHK-${c.id}`;
+    const evs = [
+      { type: "task", phase: "start", id, lead, name: c.label, msg: `${lead} probing ${c.label}` },
+      { type: "msg", from: lead, to: "FETCH_URL", kind: "tool", msg: `GET ${compliance.finalUrl}`, busy: true },
+      { type: "msg", from: lead, to: "JUDGE", kind: bad ? "err" : "ok", msg: `${c.severity.toUpperCase()}: ${c.label}`, note: c.detail },
+      { type: "task", phase: "end", id, ok: !bad, msg: `${c.label} → ${c.severity}` },
+    ];
+    swarmRef.current?.contentWindow?.postMessage({ hvs: evs }, "*");
+  }, [realTarget, compliance, visible]);
 
   return (
     <div className="min-h-screen bg-[#07090d] text-zinc-200 font-mono">
@@ -240,11 +278,11 @@ function Index() {
           <>
         <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
           <Stat
-            label="sandbox"
-            value={result ? result.sandboxId.slice(0, 8) : "…"}
-            sub="daytona workspace"
+            label={realTarget ? "target" : "sandbox"}
+            value={realTarget ? (compliance ? `HTTP ${compliance.status}` : "…") : result ? result.sandboxId.slice(0, 8) : "…"}
+            sub={realTarget ? `real site · via ${compliance?.via ?? "…"}` : "daytona workspace"}
           />
-          <Stat label="arize spans" value={String(spans)} sub="OpenInference" />
+          <Stat label={realTarget ? "checks run" : "arize spans"} value={String(spans)} sub={realTarget ? "observed" : "OpenInference"} />
           <Stat
             label="findings"
             value={realTarget ? (compliance ? String(compliance.checks.filter((c) => c.severity === "fail" || c.severity === "warn").length) : "…") : String(findings)}
@@ -257,11 +295,11 @@ function Index() {
           <div className="rounded-md border border-emerald-500/30 bg-black/40">
             <div className="flex items-center justify-between border-b border-emerald-500/20 px-4 py-2">
               <div className="text-xs uppercase tracking-widest text-emerald-300">
-                live attack trace · daytona
+                live attack trace · {realTarget ? "real target" : "daytona simulation"}
               </div>
               <div className="text-[10px] uppercase tracking-widest text-zinc-500">
-                {status === "booting" && "booting sandbox…"}
-                {status === "running" && `step ${visible}/${result?.steps.length ?? 0}`}
+                {status === "booting" && (realTarget ? "scanning…" : "booting sandbox…")}
+                {status === "running" && `step ${visible}/${realTarget ? realSteps.length : (result?.steps.length ?? 0)}`}
                 {status === "done" &&
                   result &&
                   `complete · ${result.totalMs}ms · ${destroyed ? "sandbox destroyed" : `sandbox alive · destroys ${destroyAt ? new Date(destroyAt).toLocaleTimeString() : "in 10m"}`}`}
@@ -285,7 +323,7 @@ function Index() {
               )}
               {status === "booting" && (
                 <div className="text-emerald-400">
-                  $ provisioning disposable Daytona sandbox…
+                  {realTarget ? `$ scanning ${realTarget} (real target, no synthetic data)…` : "$ provisioning disposable Daytona sandbox…"}
                 </div>
               )}
               {status === "error" && (
@@ -314,7 +352,12 @@ $ {s.command}
                   </div>
                 );
               })}
-              {status === "done" && result && (
+              {status === "done" && realTarget && compliance && (
+                <div className="mt-2 text-sky-300">
+                  ✓ real scan complete · {compliance.finalUrl} · HTTP {compliance.status} · {compliance.ms}ms · via {compliance.via}
+                </div>
+              )}
+              {status === "done" && !realTarget && result && (
                 <div className="mt-2 space-y-2">
                   <div className="text-emerald-400">
                     ✓ FINDING: indirect_prompt_injection → data exfil · evidence=sandbox://
@@ -370,21 +413,39 @@ $ {s.command}
           onStart={(u) => {
             setRealTarget(u);
             setCompliance(null);
-            startRun();
+            setResult(null);
+            setVisible(0);
+            setError(null);
+            setStatus("booting");
           }}
-          onResult={setCompliance}
+          onResult={(r) => {
+            setCompliance(r);
+            if (r) setStatus("running");
+          }}
+          onError={(m) => {
+            setError(m);
+            setStatus("error");
+          }}
         />
 
         <section className="mt-8 overflow-hidden rounded-md border border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs uppercase tracking-widest text-zinc-500">
-            <span>holographic swarm</span>
+            <span>holographic swarm · {realTarget ? "live · real scan data" : "simulation · synthetic data"}</span>
             <a href="/swarm.html" target="_blank" rel="noreferrer" className="text-emerald-400">
               fullscreen ↗
             </a>
           </div>
           {status === "idle" ? (
             <div className="flex h-[760px] items-center justify-center text-xs text-zinc-500">Swarm starts when you launch an attack.</div>
-          ) : <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[760px] w-full" />}
+          ) : (
+            <iframe
+              key={realTarget ? `live-${realTarget}` : "sim"}
+              ref={swarmRef}
+              src={realTarget ? `/swarm.html?mode=live&target=${encodeURIComponent(realTarget)}` : "/swarm.html"}
+              title="Holographic agent swarm"
+              className="h-[760px] w-full"
+            />
+          )}
         </section>
           </>
         )}
@@ -604,7 +665,7 @@ function Briefer({ realTarget, runDone, compliance, result }: { realTarget: stri
   );
 }
 
-function ComplianceScanner({ onStart, onResult }: { onStart: (url: string) => void; onResult: (r: ComplianceResult | null) => void }) {
+function ComplianceScanner({ onStart, onResult, onError }: { onStart: (url: string) => void; onResult: (r: ComplianceResult | null) => void; onError: (m: string) => void }) {
   const scan = useServerFn(scanCompliance);
   const [url, setUrl] = useState("https://");
   const [authorized, setAuthorized] = useState(false);
@@ -625,6 +686,7 @@ function ComplianceScanner({ onStart, onResult }: { onStart: (url: string) => vo
       onResult(r);
     } catch (x) {
       setErr(x instanceof Error ? x.message : String(x));
+      onError(x instanceof Error ? x.message : String(x));
     } finally {
       setBusy(false);
     }

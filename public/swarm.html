@@ -327,6 +327,12 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp
 let USER;
 try { USER = JSON.parse(document.getElementById('hvs-config').textContent.trim()); }
 catch(e){ fail('No visualization config is embedded. Build this page with scripts/build.py.'); return; }
+const QS = new URLSearchParams(location.search);
+if (QS.get('mode') === 'live') {
+  USER.mode = 'live';
+  USER.brand = Object.assign({}, USER.brand, { badge: 'Live · real scan data', operationLabel: 'Target', operation: QS.get('target') || '' });
+  USER.boot = ['Compliance scan started against real target', 'Swarm driven by real scan results only'];
+}
 const DEF = {
   brand:{ name:'HOLOGRAPHIC SWARM', tagline:'', operationLabel:'Operation', operation:'', badge:'Simulation · synthetic data' },
   mode:'simulate',
