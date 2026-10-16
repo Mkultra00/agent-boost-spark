@@ -393,6 +393,11 @@ function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
 }
 
 function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance: ComplianceResult | null; result: DaytonaResult | null }) {
+  const speak = useServerFn(speakBriefing);
+  const [voiceBusy, setVoiceBusy] = useState(false);
+  const [voiceErr, setVoiceErr] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
   const vulns = useMemo(() => {
     const list: Vuln[] = [...(runDone ? SANDBOX_VULNS : []), ...(compliance ? complianceVulns(compliance) : [])];
     return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
