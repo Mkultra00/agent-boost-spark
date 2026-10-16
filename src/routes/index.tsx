@@ -130,7 +130,7 @@ function Index() {
   const destroySandbox = useServerFn(destroyDaytonaSandbox);
   const [result, setResult] = useState<DaytonaResult | null>(null);
   const [visible, setVisible] = useState(0);
-  const [status, setStatus] = useState<"booting" | "running" | "done" | "error">("booting");
+  const [status, setStatus] = useState<"idle" | "booting" | "running" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"console" | "briefer">("console");
   const [compliance, setCompliance] = useState<ComplianceResult | null>(null);
@@ -140,22 +140,27 @@ function Index() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
-  useEffect(() => {
+  const HOLD_MS = 10 * 60_000;
+  const startRun = async () => {
     if (started.current) return;
     started.current = true;
-    (async () => {
-      try {
-        setStatus("booting");
-        const r = await daytonaProbe();
-        setResult(r);
-        setStatus("running");
-        setDestroyAt(Date.now() + 120_000);
-      } catch (e) {
-        setError(String(e));
-        setStatus("error");
-      }
-    })();
-  }, [daytonaProbe]);
+    setError(null);
+    setVisible(0);
+    setResult(null);
+    setDestroyed(false);
+    try {
+      setStatus("booting");
+      const r = await daytonaProbe();
+      setResult(r);
+      setStatus("running");
+      setDestroyAt(Date.now() + HOLD_MS);
+    } catch (e) {
+      setError(String(e));
+      setStatus("error");
+    } finally {
+      started.current = false;
+    }
+  };
 
   // Hold the sandbox open for 2 min after the scenario completes, then destroy.
   useEffect(() => {
@@ -164,7 +169,7 @@ function Index() {
       destroySandbox({ data: { id: result.sandboxId } })
         .catch(() => {})
         .finally(() => setDestroyed(true));
-    }, 120_000);
+    }, HOLD_MS);
     return () => clearTimeout(t);
   }, [result, destroyed, destroySandbox]);
 
@@ -267,6 +272,17 @@ function Index() {
               ref={scrollRef}
               className="h-[520px] overflow-y-auto px-4 py-3 text-xs leading-relaxed"
             >
+              {status === "idle" && (
+                <div className="flex h-full flex-col items-center justify-center gap-3 text-center">
+                  <div className="text-zinc-500">No run yet. Launch a live attack in a real Daytona sandbox.</div>
+                  <button
+                    onClick={startRun}
+                    className="rounded-sm border border-emerald-500 bg-emerald-500/10 px-5 py-2 text-xs uppercase tracking-widest text-emerald-300"
+                  >
+                    ▶ launch attack
+                  </button>
+                </div>
+              )}
               {status === "booting" && (
                 <div className="text-emerald-400">
                   $ provisioning disposable Daytona sandbox…
@@ -348,7 +364,9 @@ $ {s.command}
               fullscreen ↗
             </a>
           </div>
-          <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />
+          {status === "idle" ? (
+            <div className="flex h-[640px] items-center justify-center text-xs text-zinc-500">Swarm starts when you launch an attack.</div>
+          ) : <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />
         </section>
           </>
         )}
