@@ -112,12 +112,8 @@ export const runDaytonaProbe = createServerFn({ method: "POST" }).handler(async 
   );
   await exec("judge: snapshot evidence", "ls -la /home/daytona/vault /tmp/evil.html && echo FINDING=indirect_prompt_injection severity=HIGH");
 
-  // 4. destroy sandbox
-  await fetch(`${API}/sandbox/${id}?force=true`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
+  // Note: sandbox is NOT destroyed here. Client calls destroyDaytonaSandbox
+  // after a 2-minute grace period so investigators can inspect it live.
   const totalMs = Date.now() - started;
   const arize = await sendFlightToArize({
     runName: "red-team.flight",
@@ -140,3 +136,15 @@ export const runDaytonaProbe = createServerFn({ method: "POST" }).handler(async 
     arize,
   };
 });
+
+export const destroyDaytonaSandbox = createServerFn({ method: "POST" })
+  .inputValidator((d: { id: string }) => ({ id: String(d.id) }))
+  .handler(async ({ data }) => {
+    const token = process.env["DAYTONA_API_KEY"];
+    if (!token) throw new Error("DAYTONA_API_KEY not set");
+    const r = await fetch(`${API}/sandbox/${data.id}?force=true`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return { ok: r.ok, status: r.status };
+  });

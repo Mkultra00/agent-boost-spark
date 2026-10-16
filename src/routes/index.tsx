@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { runDaytonaProbe } from "@/lib/daytona.functions";
+import { runDaytonaProbe, destroyDaytonaSandbox } from "@/lib/daytona.functions";
 import { scanCompliance, type ComplianceResult } from "@/lib/compliance.functions";
 import { speakBriefing } from "@/lib/voice.functions";
 
@@ -127,12 +127,15 @@ const SEV_ORDER: Record<Vuln["severity"], number> = { critical: 0, high: 1, medi
 
 function Index() {
   const daytonaProbe = useServerFn(runDaytonaProbe);
+  const destroySandbox = useServerFn(destroyDaytonaSandbox);
   const [result, setResult] = useState<DaytonaResult | null>(null);
   const [visible, setVisible] = useState(0);
   const [status, setStatus] = useState<"booting" | "running" | "done" | "error">("booting");
   const [error, setError] = useState<string | null>(null);
   const [tab, setTab] = useState<"console" | "briefer">("console");
   const [compliance, setCompliance] = useState<ComplianceResult | null>(null);
+  const [destroyAt, setDestroyAt] = useState<number | null>(null);
+  const [destroyed, setDestroyed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
@@ -145,12 +148,24 @@ function Index() {
         const r = await daytonaProbe();
         setResult(r);
         setStatus("running");
+        setDestroyAt(Date.now() + 120_000);
       } catch (e) {
         setError(String(e));
         setStatus("error");
       }
     })();
   }, [daytonaProbe]);
+
+  // Hold the sandbox open for 2 min after the scenario completes, then destroy.
+  useEffect(() => {
+    if (!result || destroyed) return;
+    const t = setTimeout(() => {
+      destroySandbox({ data: { id: result.sandboxId } })
+        .catch(() => {})
+        .finally(() => setDestroyed(true));
+    }, 120_000);
+    return () => clearTimeout(t);
+  }, [result, destroyed, destroySandbox]);
 
   useEffect(() => {
     if (!result) return;
@@ -238,7 +253,7 @@ function Index() {
                 {status === "running" && `step ${visible}/${result?.steps.length ?? 0}`}
                 {status === "done" &&
                   result &&
-                  `complete · ${result.totalMs}ms · sandbox destroyed`}
+                  `complete · ${result.totalMs}ms · ${destroyed ? "sandbox destroyed" : `sandbox alive · destroys ${destroyAt ? new Date(destroyAt).toLocaleTimeString() : "in 2m"}`}`}
                 {status === "error" && "error"}
               </div>
             </div>
@@ -399,8 +414,9 @@ function Briefer({ runDone, compliance, result }: { runDone: boolean; compliance
   const [voiceErr, setVoiceErr] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Real website scanned → only real, observed findings. Simulation only when no real target.
   const vulns = useMemo(() => {
-    const list: Vuln[] = [...(runDone ? SANDBOX_VULNS : []), ...(compliance ? complianceVulns(compliance) : [])];
+    const list: Vuln[] = compliance ? complianceVulns(compliance) : runDone ? SANDBOX_VULNS : [];
     return list.sort((a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity]);
   }, [runDone, compliance]);
 
