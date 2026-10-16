@@ -18,6 +18,7 @@ Penetration Monkey deploys a swarm of attacker agents against a target AI agent 
 - [Scripts](#scripts)
 - [Roadmap](#roadmap)
 - [Security](#security)
+- [Team](#team)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -113,6 +114,11 @@ src/
 ## Security
 
 Penetration Monkey is meant **only** for systems you own or are explicitly authorized to test. Attacks must run inside the sandbox, with egress restricted to an allowlist. Report vulnerabilities in this project privately to the maintainers instead of opening a public issue.
+
+## Team
+
+- **Frank Yu** — creator and lead
+- **Tom Kang** — collaborator
 
 ## Contributing
 
