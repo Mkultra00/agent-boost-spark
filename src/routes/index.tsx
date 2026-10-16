@@ -443,8 +443,8 @@ function Briefer({ realTarget, runDone, compliance, result }: { realTarget: stri
   const sevColor = (s: Vuln["severity"]) =>
     s === "critical" ? "text-rose-400 border-rose-500/40" : s === "high" ? "text-orange-400 border-orange-500/40" : s === "medium" ? "text-amber-400 border-amber-500/40" : "text-zinc-400 border-zinc-700";
 
-  const arize = result?.arize;
-  const flight = result?.steps ?? [];
+  const arize = realTarget ? undefined : result?.arize;
+  const flight = realTarget ? [] : (result?.steps ?? []);
 
   const narration = useMemo(() => {
     if (vulns.length === 0) return "";
