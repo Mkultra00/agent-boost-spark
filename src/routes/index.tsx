@@ -62,7 +62,8 @@ function Index() {
       return;
     }
     const id = setTimeout(() => {
-      setLogs((l) => [...l, { ...SCRIPT[tick], t: Date.now() }]);
+      const step = SCRIPT[tick]!;
+      setLogs((l) => [...l, { ...step, t: Date.now() }]);
       setTick((n) => n + 1);
     }, 650);
     return () => clearTimeout(id);
