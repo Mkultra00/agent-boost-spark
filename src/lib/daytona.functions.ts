@@ -49,7 +49,7 @@ export const runDaytonaProbe = createServerFn({ method: "POST" }).handler(async 
       method: "POST",
       body: JSON.stringify({
         snapshot: "daytonaio/sandbox:0.8.0",
-        labels: { app: "agentredteam" },
+        labels: { app: "penetrationmonkey" },
         autoStopInterval: 15,
         autoDeleteInterval: 20,
       }),

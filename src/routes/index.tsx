@@ -8,13 +8,13 @@ import { speakBriefing } from "@/lib/voice.functions";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AgentRedTeam — Autonomous agents, sandboxed red-teaming" },
+      { title: "Penetration Monkey — Autonomous agents, sandboxed red-teaming" },
       {
         name: "description",
         content:
           "Autonomous attacker agents probe a target agent inside Daytona sandboxes. Every action traced in Arize, every memory in SurrealDB.",
       },
-      { property: "og:title", content: "AgentRedTeam" },
+      { property: "og:title", content: "Penetration Monkey" },
       {
         property: "og:description",
         content: "Trace-backed vulnerability reports for AI agents.",
@@ -240,7 +240,7 @@ function Index() {
       <div className="mx-auto max-w-6xl px-6 py-10">
         <header className="flex items-center justify-between border-b border-zinc-800 pb-6">
           <div>
-            <div className="text-xs tracking-[0.3em] text-emerald-400">AGENTREDTEAM</div>
+            <div className="text-xs tracking-[0.3em] text-emerald-400">PENETRATION MONKEY</div>
             <h1 className="mt-1 text-3xl font-bold tracking-tight text-white">
               Autonomous red-team for AI agents
             </h1>
@@ -546,7 +546,7 @@ function Briefer({ realTarget, runDone, compliance, result }: { realTarget: stri
   const narration = useMemo(() => {
     if (vulns.length === 0) return "";
     const lines = [
-      `Agent red team briefing. ${vulns.length} findings: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low.`,
+      `Penetration Monkey briefing. ${vulns.length} findings: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.low} low.`,
       arize?.sent ? `The agent flight was recorded in Arize with ${arize.spanCount} spans.` : "",
       ...vulns.slice(0, 8).map(
         (v, i) =>
