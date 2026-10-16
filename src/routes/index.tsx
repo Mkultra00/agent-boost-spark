@@ -665,7 +665,7 @@ function Briefer({ realTarget, runDone, compliance, result }: { realTarget: stri
   );
 }
 
-function ComplianceScanner({ onStart, onResult }: { onStart: (url: string) => void; onResult: (r: ComplianceResult | null) => void }) {
+function ComplianceScanner({ onStart, onResult, onError }: { onStart: (url: string) => void; onResult: (r: ComplianceResult | null) => void; onError: (m: string) => void }) {
   const scan = useServerFn(scanCompliance);
   const [url, setUrl] = useState("https://");
   const [authorized, setAuthorized] = useState(false);
@@ -686,6 +686,7 @@ function ComplianceScanner({ onStart, onResult }: { onStart: (url: string) => vo
       onResult(r);
     } catch (x) {
       setErr(x instanceof Error ? x.message : String(x));
+      onError(x instanceof Error ? x.message : String(x));
     } finally {
       setBusy(false);
     }
