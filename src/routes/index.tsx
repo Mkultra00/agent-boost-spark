@@ -284,7 +284,7 @@ function Card({ n, title, children }: { n: string; title: string; children: Reac
   );
 }
 
-function agentColor(a: LogLine["agent"]) {
+function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   switch (a) {
     case "attacker":
       return "text-rose-400";
@@ -295,12 +295,7 @@ function agentColor(a: LogLine["agent"]) {
     case "memory":
       return "text-violet-400";
     case "trace":
+    default:
       return "text-emerald-400";
   }
-}
-
-function sevColor(s: LogLine["severity"]) {
-  if (s === "hit") return "text-rose-300 font-semibold";
-  if (s === "warn") return "text-amber-200";
-  return "text-zinc-300";
 }
