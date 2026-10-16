@@ -207,6 +207,32 @@ select{width:100%;background:var(--panel-strong);border:1px solid var(--line-str
   <button class="hbtn" id="hDispatch">+ Task</button>
 </header>
 
+<div id="ctlbar">
+  <section data-tab="controls">
+    <h2>Controls</h2>
+    <div class="ctlgrid">
+      <div class="cmdbox">
+        <div class="btns">
+          <button class="btn" id="bPause">Pause</button>
+          <button class="btn pri" id="bDispatch">Dispatch task</button>
+          <button class="btn" id="bBurst">Spawn burst</button>
+          <button class="btn" id="bReset">Reset view</button>
+        </div>
+        <label class="tog" id="autoRow"><input type="checkbox" id="cAuto" checked> Auto-dispatch new tasks</label>
+      </div>
+      <div class="sliders">
+        <div class="ctl"><label for="sRot">Hologram rotation <output id="oRot"></output></label><input type="range" id="sRot" min="0" max="2" step="0.05" value="0.6"></div>
+        <div class="ctl"><label for="sFreq">Pulse frequency <output id="oFreq"></output></label><input type="range" id="sFreq" min="1" max="12" step="0.5" value="4"></div>
+        <div class="ctl"><label for="sProp">Propagation speed <output id="oProp"></output></label><input type="range" id="sProp" min="0.25" max="3" step="0.05" value="1"></div>
+        <div class="ctl"><label for="sDens">Vector density <output id="oDens"></output></label><input type="range" id="sDens" min="0" max="1" step="0.05" value="0.5"></div>
+        <div class="ctl"><label for="sGlow">Glow and bloom <output id="oGlow"></output></label><input type="range" id="sGlow" min="0" max="3" step="0.05" value="1.3"></div>
+        <div class="ctl"><label for="sOpac">Hologram opacity <output id="oOpac"></output></label><input type="range" id="sOpac" min="0.1" max="1" step="0.05" value="0.75"></div>
+        <div class="ctl"><label for="sSim">Simulation speed <output id="oSim"></output></label><input type="range" id="sSim" min="0.25" max="3" step="0.25" value="1"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
 <aside class="col" id="left">
   <section data-tab="telemetry">
     <h2>Swarm telemetry</h2>
@@ -236,25 +262,6 @@ select{width:100%;background:var(--panel-strong);border:1px solid var(--line-str
 </aside>
 
 <aside class="col" id="right">
-  <section data-tab="controls">
-    <h2>Controls</h2>
-    <div class="btnrow">
-      <button class="btn" id="bPause">Pause</button>
-      <button class="btn pri" id="bDispatch">Dispatch task</button>
-    </div>
-    <div class="btnrow">
-      <button class="btn" id="bBurst">Spawn burst</button>
-      <button class="btn" id="bReset">Reset view</button>
-    </div>
-    <label class="tog" id="autoRow"><input type="checkbox" id="cAuto" checked> Auto-dispatch new tasks</label>
-    <div class="ctl"><label for="sRot">Hologram rotation <output id="oRot"></output></label><input type="range" id="sRot" min="0" max="2" step="0.05" value="0.6"></div>
-    <div class="ctl"><label for="sFreq">Pulse frequency <output id="oFreq"></output></label><input type="range" id="sFreq" min="1" max="12" step="0.5" value="4"></div>
-    <div class="ctl"><label for="sProp">Propagation speed <output id="oProp"></output></label><input type="range" id="sProp" min="0.25" max="3" step="0.05" value="1"></div>
-    <div class="ctl"><label for="sDens">Vector density <output id="oDens"></output></label><input type="range" id="sDens" min="0" max="1" step="0.05" value="0.5"></div>
-    <div class="ctl"><label for="sGlow">Glow and bloom <output id="oGlow"></output></label><input type="range" id="sGlow" min="0" max="3" step="0.05" value="1.3"></div>
-    <div class="ctl"><label for="sOpac">Hologram opacity <output id="oOpac"></output></label><input type="range" id="sOpac" min="0.1" max="1" step="0.05" value="0.75"></div>
-    <div class="ctl"><label for="sSim">Simulation speed <output id="oSim"></output></label><input type="range" id="sSim" min="0.25" max="3" step="0.25" value="1"></div>
-  </section>
   <section data-tab="inspect">
     <h2>Inspector</h2>
     <select id="selAgent" aria-label="Select a node to inspect"></select>
