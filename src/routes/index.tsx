@@ -187,6 +187,63 @@ function Index() {
           </aside>
         </section>
 
+        <section className="mt-8 rounded-md border border-emerald-500/30 bg-emerald-500/[0.03]">
+          <div className="flex items-center justify-between border-b border-emerald-500/20 px-4 py-2">
+            <div className="text-xs uppercase tracking-widest text-emerald-300">
+              daytona · live sandbox probe
+            </div>
+            <button
+              onClick={runLive}
+              disabled={daytonaRunning}
+              className="rounded-sm border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-40"
+            >
+              {daytonaRunning ? "provisioning…" : daytonaResult ? "re-run live" : "run on daytona"}
+            </button>
+          </div>
+          <div className="px-4 py-3 text-xs">
+            {!daytonaRunning && !daytonaResult && !daytonaError && (
+              <div className="text-zinc-500">
+                Spawns a real disposable Daytona sandbox, plants a victim secret, simulates an
+                indirect prompt-injection attack chain, snapshots evidence, then destroys the
+                sandbox.
+              </div>
+            )}
+            {daytonaRunning && (
+              <div className="text-emerald-400">
+                booting sandbox · running scenario · tearing down… (10–20s)
+              </div>
+            )}
+            {daytonaError && (
+              <div className="text-rose-400">error: {daytonaError}</div>
+            )}
+            {daytonaResult && (
+              <div className="space-y-3">
+                <div className="text-zinc-500">
+                  sandbox <span className="text-emerald-300">{daytonaResult.sandboxId}</span> ·{" "}
+                  {daytonaResult.totalMs}ms · {daytonaResult.steps.length} steps
+                </div>
+                {daytonaResult.steps.map((s, i) => (
+                  <div key={i} className="rounded-sm border border-zinc-800 bg-black/40 p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-emerald-300">
+                        {String(i + 1).padStart(2, "0")} · {s.label}
+                      </span>
+                      <span className="text-zinc-600">
+                        exit={s.exitCode} · {s.ms}ms
+                      </span>
+                    </div>
+                    <pre className="mt-2 whitespace-pre-wrap break-all text-[11px] leading-relaxed text-zinc-300">
+{s.output}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+
+
+
         <section className="mt-8 overflow-hidden rounded-md border border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs uppercase tracking-widest text-zinc-500">
             <span>holographic swarm</span>
