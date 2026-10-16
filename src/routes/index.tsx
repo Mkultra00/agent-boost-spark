@@ -210,21 +210,6 @@ $ {s.command}
           <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />
         </section>
 
-        <section className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <Card n="01" title="Sandbox">
-            Daytona spins a disposable workspace per run. Target agent + tools live inside; nothing
-            escapes the allowlist.
-          </Card>
-          <Card n="02" title="Trace">
-            Every tool call, prompt, and response emits an OpenInference span to Arize. Findings
-            link to the exact span that caused them.
-          </Card>
-          <Card n="03" title="Memory">
-            SurrealDB stores runs, findings, and attacker memory as a graph. Retests query the same
-            memory to prove the fix.
-          </Card>
-        </section>
-
         <footer className="mt-12 border-t border-zinc-800 pt-6 text-xs text-zinc-500">
           hackathon demo · daytona × arize × surrealdb · nyc oct 2026
         </footer>
@@ -274,15 +259,6 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-function Card({ n, title, children }: { n: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-md border border-zinc-800 bg-black/40 p-5">
-      <div className="text-xs text-emerald-400">{n}</div>
-      <div className="mt-1 text-lg font-semibold text-white">{title}</div>
-      <div className="mt-2 text-sm leading-relaxed text-zinc-400">{children}</div>
-    </div>
-  );
-}
 
 function agentColor(a: "attacker" | "target" | "judge" | "memory" | "trace") {
   switch (a) {

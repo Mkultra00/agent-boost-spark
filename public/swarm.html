@@ -984,8 +984,7 @@ window.addEventListener('keydown', e => { if (e.code === 'Space' && e.target ===
 const selEl = $('#selAgent');
 function fillSelect(){
   const opts = ['<option value="">Select a node…</option>'];
-  [PRIME, ...agents, ...tools].forEach(n => opts.push(`<option value="${esc(n.id)}">${esc(n.id)}</option>`));
-  subs.filter(s => !s.dying).forEach(s => opts.push(`<option value="${esc(s.id)}">${esc(s.id)} (subagent)</option>`));
+  [PRIME, ...agents].forEach(n => opts.push(`<option value="${esc(n.id)}">${esc(n.id)}</option>`));
   const v = selEl.value; selEl.innerHTML = opts.join(''); selEl.value = v;
 }
 selEl.onchange = () => select(nodeById[selEl.value] || null);
