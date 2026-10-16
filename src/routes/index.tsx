@@ -279,7 +279,7 @@ function Index() {
                     onClick={startRun}
                     className="rounded-sm border border-emerald-500 bg-emerald-500/10 px-5 py-2 text-xs uppercase tracking-widest text-emerald-300"
                   >
-                    ▶ launch attack
+                    ▶ launch simulated attack
                   </button>
                 </div>
               )}
