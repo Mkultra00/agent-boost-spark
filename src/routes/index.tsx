@@ -264,7 +264,7 @@ function Index() {
                 {status === "running" && `step ${visible}/${result?.steps.length ?? 0}`}
                 {status === "done" &&
                   result &&
-                  `complete · ${result.totalMs}ms · ${destroyed ? "sandbox destroyed" : `sandbox alive · destroys ${destroyAt ? new Date(destroyAt).toLocaleTimeString() : "in 2m"}`}`}
+                  `complete · ${result.totalMs}ms · ${destroyed ? "sandbox destroyed" : `sandbox alive · destroys ${destroyAt ? new Date(destroyAt).toLocaleTimeString() : "in 10m"}`}`}
                 {status === "error" && "error"}
               </div>
             </div>
