@@ -188,14 +188,36 @@ function Index() {
   }, [visible, status]);
 
   const shownSteps: Step[] = useMemo(
-    () => (result ? result.steps.slice(0, visible) : []),
-    [result, visible],
+    () => (realTarget ? realSteps.slice(0, visible) : result ? result.steps.slice(0, visible) : []),
+    [result, realSteps, realTarget, visible],
   );
   const findings = useMemo(
     () => shownSteps.filter((s) => /FINDING|exfil|secret/i.test(s.output)).length,
     [shownSteps],
   );
   const spans = shownSteps.length;
+
+  // Real mode: drive the swarm from the real scan checks only.
+  const swarmRef = useRef<HTMLIFrameElement>(null);
+  useEffect(() => {
+    if (!realTarget || !compliance || visible === 0) return;
+    const c = compliance.checks[visible - 1];
+    if (!c) return;
+    const lead = ["csp", "clickjacking", "permissions", "nosniff"].includes(c.id)
+      ? "INJECTOR"
+      : ["cookies", "forms", "tls", "hsts"].includes(c.id)
+        ? "EXFIL"
+        : "RECON";
+    const bad = c.severity === "fail" || c.severity === "warn";
+    const id = `CHK-${c.id}`;
+    const evs = [
+      { type: "task", phase: "start", id, lead, name: c.label, msg: `${lead} probing ${c.label}` },
+      { type: "msg", from: lead, to: "FETCH_URL", kind: "tool", msg: `GET ${compliance.finalUrl}`, busy: true },
+      { type: "msg", from: lead, to: "JUDGE", kind: bad ? "err" : "ok", msg: `${c.severity.toUpperCase()}: ${c.label}`, note: c.detail },
+      { type: "task", phase: "end", id, ok: !bad, msg: `${c.label} → ${c.severity}` },
+    ];
+    swarmRef.current?.contentWindow?.postMessage({ hvs: evs }, "*");
+  }, [realTarget, compliance, visible]);
 
   return (
     <div className="min-h-screen bg-[#07090d] text-zinc-200 font-mono">
