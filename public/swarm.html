@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Holographic Vector Swarm (HVS) template. Build pages with scripts/build.py; do not hand-edit per dataset. -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AGENTREDTEAM · Holographic Vector Swarm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#01050b; --panel:rgba(4,17,29,.68); --panel-strong:rgba(4,16,28,.94);
+  --line:rgba(110,220,255,.18); --line-strong:rgba(110,220,255,.5);
+  --text:#d4f2ff; --dim:#80aac0; --faint:#4d7286;
+  --cyan:#3ee8ff; --violet:#b08cff; --amber:#ffb547; --green:#4dff9a; --red:#ff5470; --white:#e9f8ff;
+  --display:'Chakra Petch', 'Rajdhani', 'Segoe UI', system-ui, sans-serif;
+  --mono:'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  color-scheme: dark;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+/* The hologram is a dark-room projection by design; both schemes keep the same tokens. */
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#01050b; --panel:rgba(4,17,29,.68); --panel-strong:rgba(4,16,28,.94); --text:#d4f2ff; --dim:#80aac0; --faint:#4d7286; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --bg:#01050b; --panel:rgba(4,17,29,.68); --panel-strong:rgba(4,16,28,.94); --text:#d4f2ff; --dim:#80aac0; --faint:#4d7286; color-scheme:dark; }
+
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;line-height:1.45;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+#stage{position:fixed;inset:0}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none;outline:none}
+#veil{position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 50% 46%, transparent 52%, rgba(0,0,0,.6) 100%),
+    repeating-linear-gradient(to bottom, rgba(120,220,255,.025) 0 1px, transparent 1px 3px);}
+#labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+
+.lbl{position:absolute;left:0;top:0;pointer-events:auto;cursor:pointer;white-space:nowrap;
+  font-family:var(--display);color:var(--white);padding:2px 6px 2px 8px;border-left:1px solid var(--line-strong);
+  text-shadow:0 0 8px rgba(62,232,255,.65);will-change:transform;transition:opacity .25s}
+.lbl b{display:block;font-weight:600;font-size:12px;letter-spacing:.08em}
+.lbl .r{display:block;font-family:var(--mono);font-size:10px;color:var(--dim);text-shadow:none}
+.lbl .s{color:var(--cyan)}
+.lbl.busy .s{color:var(--white)}
+.lbl.err{border-left-color:var(--red)} .lbl.err .s{color:var(--red)}
+.lbl.far{opacity:.45}
+.lbl.sub{border-left-color:rgba(110,220,255,.3);padding:0 4px 0 6px}
+.lbl.sub b{font-size:10px;font-weight:500;letter-spacing:.04em;color:var(--text)}
+.lbl.tool b{color:var(--amber);text-shadow:0 0 8px rgba(255,181,71,.6)} .lbl.tool{border-left-color:rgba(255,181,71,.5)}
+.lbl.prime b{font-size:13px;letter-spacing:.14em}
+.lbl.sel{border-left:2px solid var(--white);background:rgba(62,232,255,.08)}
+
+/* header */
+#top{position:fixed;top:0;left:0;right:0;z-index:6;display:flex;align-items:center;gap:18px;
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 18px 12px;
+  background:linear-gradient(to bottom, rgba(1,5,11,.92), rgba(1,5,11,0))}
+.brand{display:flex;align-items:center;gap:10px}
+.sig{width:26px;height:26px;border:1px solid var(--cyan);border-radius:50%;position:relative;box-shadow:0 0 14px rgba(62,232,255,.5) inset,0 0 10px rgba(62,232,255,.35)}
+.sig::after{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--white);box-shadow:0 0 10px var(--cyan)}
+.t1{font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:.22em;line-height:1}
+.t2{font-size:10px;color:var(--dim);margin-top:3px}
+.op{border-left:1px solid var(--line-strong);padding-left:14px}
+.op .k{font-size:10px;color:var(--dim)}
+.op .v{font-family:var(--display);font-weight:600;font-size:14px;letter-spacing:.16em;color:var(--white)}
+.spacer{flex:1}
+.simtag{font-size:10px;color:var(--amber);border:1px solid rgba(255,181,71,.45);padding:3px 8px;letter-spacing:.06em}
+.clock{font-size:13px;color:var(--cyan);min-width:84px;text-align:right}
+.hbtn{background:rgba(62,232,255,.08);border:1px solid var(--line-strong);padding:6px 10px;cursor:pointer;font-family:var(--display);font-weight:600;letter-spacing:.06em;font-size:12px}
+.hbtn:hover{background:rgba(62,232,255,.18)}
+#pausedTag{display:none;color:var(--amber);font-family:var(--display);letter-spacing:.2em}
+body.paused #pausedTag{display:inline}
+
+/* columns */
+.col{position:fixed;top:70px;bottom:16px;width:310px;display:flex;flex-direction:column;gap:12px;z-index:4;pointer-events:none}
+#left{left:16px} #right{right:16px}
+.col section{pointer-events:auto;position:relative;background:var(--panel);border:1px solid var(--line);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:12px 14px;overflow:auto;scrollbar-width:thin;scrollbar-color:rgba(110,220,255,.3) transparent}
+.col section::before,.col section::after{content:"";position:absolute;width:10px;height:10px;border-color:var(--cyan);border-style:solid;pointer-events:none}
+.col section::before{top:-1px;left:-1px;border-width:1px 0 0 1px}
+.col section::after{bottom:-1px;right:-1px;border-width:0 1px 1px 0}
+#left section[data-tab="telemetry"]{flex:0 1 auto;max-height:64%}
+#left section[data-tab="log"]{flex:1;min-height:120px;display:flex;flex-direction:column}
+#right section[data-tab="controls"]{flex:0 0 auto}
+#right section[data-tab="inspect"]{flex:1;min-height:140px}
+
+h2{font-family:var(--display);font-weight:600;font-size:13px;letter-spacing:.14em;margin:0 0 10px;color:var(--white)}
+h3{font-family:var(--display);font-weight:500;font-size:11px;letter-spacing:.1em;color:var(--dim);margin:14px 0 6px;border-bottom:1px solid var(--line);padding-bottom:4px}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tile{border:1px solid var(--line);padding:6px 6px 5px;background:rgba(62,232,255,.03)}
+.tile .n{font-family:var(--display);font-size:18px;font-weight:600;line-height:1.1;color:var(--white)}
+.tile .k{font-size:9px;color:var(--dim);line-height:1.2}
+.tile.g .n{color:var(--green)} .tile.r .n{color:var(--red)} .tile.a .n{color:var(--amber)} .tile.v .n{color:var(--violet)}
+#spark{width:100%;height:38px;display:block;margin-top:8px;border:1px solid var(--line)}
+.spk{display:flex;justify-content:space-between;font-size:9px;color:var(--faint);margin-top:2px}
+
+#roster .ag{display:grid;grid-template-columns:10px 72px 1fr auto;gap:6px;align-items:center;padding:3px 4px;cursor:pointer;border:1px solid transparent}
+#roster .ag:hover,#roster .ag.sel{border-color:var(--line-strong);background:rgba(62,232,255,.06)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.ag.busy .dot{background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.ag.err .dot{background:var(--red);box-shadow:0 0 6px var(--red)}
+.ag b{font-family:var(--display);font-weight:600;letter-spacing:.06em;font-size:11px}
+.ag .st{color:var(--dim);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ag .sb{color:var(--faint);font-size:10px}
+.ag.busy .st{color:var(--cyan)}
+
+#tasks .tk{padding:4px 0;border-bottom:1px dashed var(--line)}
+#tasks .tk:last-child{border-bottom:0}
+#tasks .tk .h{display:flex;justify-content:space-between;color:var(--white)}
+#tasks .tk .d{color:var(--dim);font-size:10px}
+#tasks .empty{color:var(--faint)}
+
+.legend{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px}
+.legend span{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--dim)}
+.legend i{width:18px;height:2px;border-radius:2px;box-shadow:0 0 6px currentColor}
+
+#log{flex:1;overflow:auto;min-height:0;font-size:11px;scrollbar-width:thin;scrollbar-color:rgba(110,220,255,.3) transparent}
+.ev{display:grid;grid-template-columns:54px 42px 1fr;gap:6px;padding:3px 0;border-bottom:1px solid rgba(110,220,255,.06);animation:evIn .35s ease-out}
+@keyframes evIn{from{background:rgba(62,232,255,.14)}to{background:transparent}}
+.ev .ts{color:var(--faint)} .ev .tag{font-size:9px;padding-top:2px;letter-spacing:.06em}
+.ev .msg em{display:block;font-style:normal;color:var(--faint);font-size:10px}
+.ev.cmd .tag{color:var(--white)} .ev.comm .tag{color:var(--cyan)} .ev.mem .tag{color:var(--violet)}
+.ev.tool .tag{color:var(--amber)} .ev.ok .tag{color:var(--green)} .ev.err .tag{color:var(--red)} .ev.err .msg{color:#ffc2cc}
+.ev.spawn .tag{color:var(--cyan)} .ev.retire .tag,.ev.sync .tag,.ev.sys .tag{color:var(--faint)} .ev.sync .msg{color:var(--dim)}
+
+.btnrow{display:flex;gap:6px;margin-bottom:10px}
+.btn{flex:1;background:rgba(62,232,255,.06);border:1px solid var(--line-strong);padding:8px 6px;cursor:pointer;font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.05em}
+.btn:hover{background:rgba(62,232,255,.16)}
+.btn.pri{background:rgba(62,232,255,.18);border-color:var(--cyan);color:var(--white);box-shadow:0 0 12px rgba(62,232,255,.25) inset}
+.ctl{margin:8px 0}
+.ctl label{display:flex;justify-content:space-between;font-size:11px;color:var(--dim);margin-bottom:3px}
+.ctl output{color:var(--cyan)}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:2px;background:linear-gradient(to right,var(--cyan),rgba(62,232,255,.15))}
+input[type=range]::-moz-range-track{height:2px;background:rgba(62,232,255,.3)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-5px;border:1px solid var(--white);background:var(--bg);transform:rotate(45deg);box-shadow:0 0 8px var(--cyan)}
+input[type=range]::-moz-range-thumb{width:10px;height:10px;border:1px solid var(--white);background:var(--bg);border-radius:0;transform:rotate(45deg)}
+.tog{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim);margin:4px 0 8px;cursor:pointer}
+.tog input{accent-color:var(--cyan)}
+select{width:100%;background:var(--panel-strong);border:1px solid var(--line-strong);padding:6px;margin-bottom:6px}
+
+#insp .empty{color:var(--faint)}
+#insp .nm{font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:.12em;color:var(--white)}
+#insp .rl{color:var(--dim);font-size:11px;margin-bottom:8px}
+.pill{display:inline-block;padding:2px 8px;border:1px solid var(--cyan);color:var(--cyan);font-size:10px;letter-spacing:.06em;margin-bottom:8px}
+.pill.idle{border-color:var(--faint);color:var(--dim)} .pill.err{border-color:var(--red);color:var(--red)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-bottom:6px}
+.kv div{display:flex;justify-content:space-between;border-bottom:1px solid rgba(110,220,255,.07);padding:2px 0}
+.kv span{color:var(--dim)} .kv b{font-weight:500;color:var(--white)}
+.bar{height:3px;background:rgba(62,232,255,.12);margin:4px 0 10px}
+.bar i{display:block;height:100%;background:var(--cyan);box-shadow:0 0 6px var(--cyan)}
+.subl div{display:flex;justify-content:space-between;padding:2px 0;font-size:11px;cursor:pointer}
+.subl div:hover{color:var(--white)}
+.subl span{color:var(--cyan);font-size:10px}
+.last{color:var(--dim);font-size:11px;margin-top:6px}
+
+#hint{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);font-size:10px;color:var(--faint);z-index:3;pointer-events:none;white-space:nowrap}
+#tabs{display:none}
+#fail{display:none;position:fixed;inset:0;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:20;color:var(--dim)}
+
+@media (max-width: 1080px){ .col{width:270px} .op{display:none} }
+@media (max-width: 760px){
+  body{font-size:12px}
+  #top{gap:10px;padding:calc(env(safe-area-inset-top,0px) + 10px) 12px 10px}
+  .t2,.clock,.simtag-long{display:none}
+  .simtag{font-size:9px;padding:2px 6px}
+  .hbtn{padding:6px 8px;font-size:11px}
+  #hint{display:none}
+  .col{top:auto;left:0;right:0;width:auto;bottom:calc(50px + env(safe-area-inset-bottom,0px));height:46%;padding:0 8px 8px;display:none}
+  .col section{display:none;flex:1 1 auto!important;max-height:none!important;height:100%}
+  body[data-tab="telemetry"] #left, body[data-tab="log"] #left, body[data-tab="controls"] #right, body[data-tab="inspect"] #right{display:flex}
+  body[data-tab="telemetry"] section[data-tab="telemetry"], body[data-tab="controls"] section[data-tab="controls"], body[data-tab="inspect"] section[data-tab="inspect"]{display:block}
+  body[data-tab="log"] section[data-tab="log"]{display:flex}
+  #tabs{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:6;gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:var(--panel-strong);border-top:1px solid var(--line)}
+  #tabs button{flex:1;background:transparent;border:1px solid transparent;padding:8px 2px;font-family:var(--display);font-weight:600;font-size:12px;letter-spacing:.05em;color:var(--dim);cursor:pointer}
+  #tabs button.on{color:var(--white);border-color:var(--line-strong);background:rgba(62,232,255,.1)}
+  .lbl .r{display:none}
+  .lbl.sub{display:none}
+  .lbl b{font-size:10px}
+}
+@media (prefers-reduced-motion: reduce){ .ev{animation:none} }
+</style>
+
+<body data-tab="">
+<div id="stage"></div>
+<div id="veil"></div>
+<div id="labels"></div>
+
+<header id="top">
+  <div class="brand">
+    <div class="sig" aria-hidden="true"></div>
+    <div><div class="t1" id="brandName"></div><div class="t2" id="brandTag"></div></div>
+  </div>
+  <div class="op" id="opBox"><div class="k" id="opLabel"></div><div class="v" id="opName"></div></div>
+  <div class="spacer"></div>
+  <span id="pausedTag">PAUSED</span>
+  <div class="simtag" id="badge"></div>
+  <div class="clock" id="clock">T+00:00.0</div>
+  <button class="hbtn" id="hPause" aria-label="Pause animation">Pause</button>
+  <button class="hbtn" id="hDispatch">+ Task</button>
+</header>
+
+<aside class="col" id="left">
+  <section data-tab="telemetry">
+    <h2>Swarm telemetry</h2>
+    <div class="tiles">
+      <div class="tile"><div class="n" id="mAgents">0</div><div class="k">Agents online</div></div>
+      <div class="tile"><div class="n" id="mSubs">0</div><div class="k">Subagents live</div></div>
+      <div class="tile"><div class="n" id="mTasks">0</div><div class="k">Active tasks</div></div>
+      <div class="tile"><div class="n" id="mComms">0</div><div class="k">Comm events</div></div>
+      <div class="tile a"><div class="n" id="mTools">0</div><div class="k">Tool calls</div></div>
+      <div class="tile v"><div class="n" id="mMem">0</div><div class="k">Memory ops</div></div>
+      <div class="tile g"><div class="n" id="mDone">0</div><div class="k">Completed</div></div>
+      <div class="tile r"><div class="n" id="mFail">0</div><div class="k">Failures</div></div>
+    </div>
+    <canvas id="spark"></canvas>
+    <div class="spk"><span>Vector traffic, last 40 s</span><span id="spkNow">0 / s</span></div>
+    <h3>Agents</h3>
+    <div id="roster"></div>
+    <h3>Active tasks</h3>
+    <div id="tasks"><div class="empty">Waiting for work</div></div>
+    <h3>Vector colors</h3>
+    <div class="legend" id="legend"></div>
+  </section>
+  <section data-tab="log">
+    <h2>Event stream</h2>
+    <div id="log" aria-live="off"></div>
+  </section>
+</aside>
+
+<aside class="col" id="right">
+  <section data-tab="controls">
+    <h2>Controls</h2>
+    <div class="btnrow">
+      <button class="btn" id="bPause">Pause</button>
+      <button class="btn pri" id="bDispatch">Dispatch task</button>
+    </div>
+    <div class="btnrow">
+      <button class="btn" id="bBurst">Spawn burst</button>
+      <button class="btn" id="bReset">Reset view</button>
+    </div>
+    <label class="tog" id="autoRow"><input type="checkbox" id="cAuto" checked> Auto-dispatch new tasks</label>
+    <div class="ctl"><label for="sRot">Hologram rotation <output id="oRot"></output></label><input type="range" id="sRot" min="0" max="2" step="0.05" value="0.6"></div>
+    <div class="ctl"><label for="sFreq">Pulse frequency <output id="oFreq"></output></label><input type="range" id="sFreq" min="1" max="12" step="0.5" value="4"></div>
+    <div class="ctl"><label for="sProp">Propagation speed <output id="oProp"></output></label><input type="range" id="sProp" min="0.25" max="3" step="0.05" value="1"></div>
+    <div class="ctl"><label for="sDens">Vector density <output id="oDens"></output></label><input type="range" id="sDens" min="0" max="1" step="0.05" value="0.5"></div>
+    <div class="ctl"><label for="sGlow">Glow and bloom <output id="oGlow"></output></label><input type="range" id="sGlow" min="0" max="3" step="0.05" value="1.3"></div>
+    <div class="ctl"><label for="sOpac">Hologram opacity <output id="oOpac"></output></label><input type="range" id="sOpac" min="0.1" max="1" step="0.05" value="0.75"></div>
+    <div class="ctl"><label for="sSim">Simulation speed <output id="oSim"></output></label><input type="range" id="sSim" min="0.25" max="3" step="0.25" value="1"></div>
+  </section>
+  <section data-tab="inspect">
+    <h2>Inspector</h2>
+    <select id="selAgent" aria-label="Select a node to inspect"></select>
+    <div id="insp"><div class="empty">Tap any node in the hologram, or pick one above.</div></div>
+  </section>
+</aside>
+
+<div id="hint">Drag to rotate · scroll or pinch to zoom · tap a node to inspect</div>
+
+<nav id="tabs">
+  <button data-t="telemetry">Telemetry</button>
+  <button data-t="log">Events</button>
+  <button data-t="controls">Controls</button>
+  <button data-t="inspect">Inspect</button>
+</nav>
+
+<div id="fail">This visualization needs WebGL, which isn't available in this browser.</div>
+
+<script id="hvs-config" type="application/json">{"brand":{"name":"AGENTREDTEAM","tagline":"Autonomous red-team swarm","operationLabel":"Run","operation":"01HXZ","badge":"Simulation · synthetic data"},"mode":"simulate","boot":["Daytona sandbox provisioned","Arize OpenInference tracer online","SurrealDB memory graph loaded"],"orchestrator":{"id":"COMMANDER","role":"Red-team orchestrator"},"agents":[{"id":"RECON","role":"Tool enumeration"},{"id":"INJECTOR","role":"Prompt injection attacks"},{"id":"EXFIL","role":"Data exfiltration probes"},{"id":"JAILBRK","role":"Jailbreak mutations"},{"id":"TARGET","role":"vulnerable-support-agent"},{"id":"SURREAL","role":"SurrealDB attack memory"},{"id":"JUDGE","role":"Arize eval judge"}],"tools":[{"id":"DAYTONA","role":"Sandbox exec","verbs":["spin sandbox","exec payload","snapshot fs"]},{"id":"ARIZE","role":"Trace + eval","verbs":["emit span","score exploit"]},{"id":"FETCH_URL","role":"Target tool","verbs":["fetch evil.html"]},{"id":"SEND_EMAIL","role":"Target tool","verbs":["send_email leak"]}],"roles":{"memory":"SURREAL","validator":"JUDGE"},"simulation":{"tasks":[{"name":"Indirect prompt injection via fetch_url","lead":"INJECTOR"},{"name":"Enumerate target tools","lead":"RECON"},{"name":"Exfil secrets via send_email","lead":"EXFIL"},{"name":"Jailbreak mutation sweep","lead":"JAILBRK"}],"subagents":[2,4],"toolFailRate":0.2,"rejectRate":0.25},"legend":{"cmd":"Orchestrator commands","comm":"Agent handoffs","mem":"SurrealDB memory","tool":"Sandbox / tool calls","ok":"Verified findings","err":"Blocked / failed attacks"}}</script>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* Holographic Vector Swarm (HVS) engine. Config-driven; see references/config-schema.md. */
+(function(){
+'use strict';
+const $ = s => document.querySelector(s);
+const fail = msg => { const f = $('#fail'); f.style.display = 'flex'; if (msg) f.textContent = msg; };
+if (!window.THREE) { fail('The 3D engine failed to load. Check your connection and reload.'); return; }
+const V3 = THREE.Vector3, D2R = Math.PI/180;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------------- configuration ---------------- */
+let USER;
+try { USER = JSON.parse(document.getElementById('hvs-config').textContent.trim()); }
+catch(e){ fail('No visualization config is embedded. Build this page with scripts/build.py.'); return; }
+const DEF = {
+  brand:{ name:'HOLOGRAPHIC SWARM', tagline:'', operationLabel:'Operation', operation:'', badge:'Simulation · synthetic data' },
+  mode:'simulate',
+  orchestrator:{ id:'PRIME', role:'Orchestrator', model:'' },
+  agents:[], tools:[], roles:{},
+  colors:{ cmd:'#dff4ff', comm:'#3ee8ff', mem:'#a77bff', tool:'#ffb547', ok:'#4dff9a', err:'#ff4d6a' },
+  legend:{ cmd:'Orchestrator commands', comm:'Delegation and messages', mem:'Memory and context', tool:'Tool and API calls', ok:'Validated results', err:'Errors and alerts' },
+  simulation:{ tasks:[], autoDispatch:true, maxConcurrent:3, subagents:[2,4], nestedRate:0.12, toolFailRate:0.1, rejectRate:0.15, memoryRate:0.6, chatter:true,
+    memoryOps:['semantic recall, k=12','episodic lookup','context window merge','embedding upsert'],
+    errors:['429 rate limited','timeout after 8 s','schema mismatch','auth token expired','upstream 503'] },
+  replay:{ loop:true, speed:1, events:[] },
+  visual:{ rotation:0.6, pulseFrequency:4, propagation:1, density:0.5, glow:1.3, opacity:0.75, simSpeed:1 }
+};
+const isObj = o => o && typeof o === 'object' && !Array.isArray(o);
+function merge(a, b){ for (const k in b){ if (isObj(b[k]) && isObj(a[k])) merge(a[k], b[k]); else a[k] = b[k]; } return a; }
+const CFG = merge(JSON.parse(JSON.stringify(DEF)), USER || {});
+if (!CFG.agents.length) { fail('The config has no agents. Add at least one entry to "agents".'); return; }
+const MODE = ['simulate','replay','live'].includes(CFG.mode) ? CFG.mode : 'simulate';
+const SIM = CFG.simulation;
+
+/* ---------------- state ---------------- */
+const V = CFG.visual;
+const state = { paused:false, rot:V.rotation, freq:V.pulseFrequency, prop:V.propagation, density:V.density, glow:V.glow, opacity:V.opacity, simSpeed:V.simSpeed, auto:MODE === 'simulate' && SIM.autoDispatch !== false };
+const KINDS = ['cmd','comm','mem','tool','ok','err'];
+const COL = {}; KINDS.forEach(k => COL[k] = new THREE.Color(CFG.colors[k] || DEF.colors[k]).getHex());
+const RED = new THREE.Color(COL.err);
+const stats = { comms:0, tools:0, mem:0, done:0, fail:0, spawned:0, dispatched:0 };
+let simT = 0, animT = 0;
+const isMobile = () => window.innerWidth <= 760;
+function rng(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const rand = rng(1337);
+
+/* ---------------- static UI text ---------------- */
+document.title = CFG.title || `${CFG.brand.name} · Holographic Vector Swarm`;
+$('#brandName').textContent = CFG.brand.name;
+$('#brandTag').textContent = CFG.brand.tagline || '';
+if (CFG.brand.operation) { $('#opLabel').textContent = CFG.brand.operationLabel; $('#opName').textContent = CFG.brand.operation; } else $('#opBox').style.display = 'none';
+const defaultBadge = MODE === 'simulate' ? 'Simulation · synthetic data' : MODE === 'replay' ? 'Replay of recorded events' : 'Live event feed';
+$('#badge').textContent = (USER.brand && USER.brand.badge) || defaultBadge;
+$('#legend').innerHTML = KINDS.map(k => `<span><i style="color:${CFG.colors[k]};background:${CFG.colors[k]}"></i>${esc(CFG.legend[k])}</span>`).join('');
+$('#mAgents').textContent = CFG.agents.length;
+[['sRot','rot'],['sFreq','freq'],['sProp','prop'],['sDens','density'],['sGlow','glow'],['sOpac','opacity'],['sSim','simSpeed']].forEach(([id,k]) => $('#'+id).value = state[k]);
+$('#cAuto').checked = state.auto;
+if (MODE !== 'simulate') {
+  $('#bDispatch').textContent = MODE === 'replay' ? 'Restart replay' : 'Clear subagents';
+  $('#hDispatch').textContent = MODE === 'replay' ? 'Restart' : 'Clear';
+  $('#bBurst').style.display = 'none'; $('#autoRow').style.display = 'none';
+  $('label[for=sSim]').firstChild.textContent = MODE === 'replay' ? 'Replay speed ' : 'Animation speed ';
+}
+
+/* ---------------- renderer ---------------- */
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' }); }
+catch(e){ fail(); return; }
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 1.75));
+renderer.setClearColor(0x01050b, 1);
+$('#stage').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 800);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.minDistance = 14; controls.maxDistance = 160; controls.enablePan = false;
+controls.rotateSpeed = 0.6; controls.zoomSpeed = 0.8;
+const SC = Math.max(1, Math.sqrt(CFG.agents.length / 7));
+function defaultView(){
+  const a = window.innerWidth / window.innerHeight;
+  const d = (a < 0.7 ? 66 : a < 1.1 ? 50 : 38) * SC;
+  camera.position.set(0, d*0.34, d);
+  controls.target.set(0, isMobile() ? -1.5 : 0, 0);
+}
+defaultView();
+const world = new THREE.Group(); scene.add(world);
+let composer = null, bloom = null;
+try {
+  if (THREE.EffectComposer && THREE.UnrealBloomPass && THREE.RenderPass) {
+    composer = new THREE.EffectComposer(renderer);
+    composer.addPass(new THREE.RenderPass(scene, camera));
+    bloom = new THREE.UnrealBloomPass(new THREE.Vector2(512,512), state.glow, 0.62, 0.0);
+    composer.addPass(bloom);
+  }
+} catch(e){ composer = null; bloom = null; }
+function resize(){
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h); if (composer) composer.setSize(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix(); sizeSpark();
+}
+
+/* ---------------- shared materials ---------------- */
+const HALO = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d'); const gr = g.createRadialGradient(64,64,0,64,64,64);
+  gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(.18,'rgba(255,255,255,.55)');
+  gr.addColorStop(.5,'rgba(255,255,255,.1)'); gr.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = gr; g.fillRect(0,0,128,128); return new THREE.CanvasTexture(c);
+})();
+function halo(color, size, op){
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:HALO, color, transparent:true, opacity:op, blending:THREE.AdditiveBlending, depthWrite:false }));
+  s.scale.setScalar(size); return s;
+}
+const fresnelMats = [];
+function fresnelMat(color, pow, str, base){
+  const m = new THREE.ShaderMaterial({
+    uniforms:{ uColor:{value:new THREE.Color(color)}, uPow:{value:pow}, uStr:{value:str}, uBase:{value:base}, uOpacity:{value:state.opacity}, uTime:{value:0}, uPulse:{value:0} },
+    vertexShader:`varying vec3 vN; varying vec3 vV; varying vec3 vP;
+      void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); vN = normalize(normalMatrix*normal); vV = normalize(-mv.xyz); vP = position; gl_Position = projectionMatrix*mv; }`,
+    fragmentShader:`uniform vec3 uColor; uniform float uPow; uniform float uStr; uniform float uBase; uniform float uOpacity; uniform float uTime; uniform float uPulse;
+      varying vec3 vN; varying vec3 vV; varying vec3 vP;
+      void main(){
+        float f = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), uPow);
+        float scan = 0.5 + 0.5*sin(vP.y*12.0 - uTime*2.6);
+        float i = (f*uStr + uBase + scan*0.03 + uPulse*0.5*f) * uOpacity;
+        gl_FragColor = vec4(uColor*i, 1.0);
+      }`,
+    transparent:true, blending:THREE.AdditiveBlending, depthWrite:false
+  });
+  fresnelMats.push(m); return m;
+}
+const lineMats = [];
+function lineMat(color, op){
+  const m = new THREE.LineBasicMaterial({ color, transparent:true, opacity:op, blending:THREE.AdditiveBlending, depthWrite:false });
+  m.userData.base = op; lineMats.push(m); return m;
+}
+function circle(r, seg, mat, y){
+  const pts = []; for (let i=0;i<seg;i++){ const a = i/seg*Math.PI*2; pts.push(new V3(Math.cos(a)*r, y||0, Math.sin(a)*r)); }
+  return new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), mat);
+}
+
+/* ---------------- holographic table & projector ---------------- */
+const floor = new THREE.PolarGridHelper(30*SC, 24, 10, 128, 0x1f7fa3, 0x0c3a50);
+floor.material.transparent = true; floor.material.opacity = 0.32; floor.material.depthWrite = false; floor.material.blending = THREE.AdditiveBlending;
+floor.position.y = -13; scene.add(floor);
+const emitterRings = new THREE.Group(); emitterRings.position.y = -12.95; scene.add(emitterRings);
+[1.2, 1.8, 2.6].forEach((r,i)=> emitterRings.add(circle(r, 96, lineMat(0x7fe8ff, 0.5 - i*0.12))));
+const emitterGlow = halo(0x3ee8ff, 7, 0.55); emitterGlow.position.y = -12.8; scene.add(emitterGlow);
+const coneMat = new THREE.ShaderMaterial({
+  uniforms:{ uOpacity:{value:state.opacity}, uTime:{value:0} },
+  vertexShader:`varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`uniform float uOpacity; uniform float uTime; varying vec2 vUv;
+    void main(){ float a = pow(1.0 - vUv.y, 1.7)*0.2*uOpacity; a *= 0.7 + 0.3*sin(vUv.x*90.0 + uTime*1.5); a *= 0.8 + 0.2*sin(vUv.y*40.0 - uTime*4.0);
+      gl_FragColor = vec4(vec3(0.22,0.78,1.0)*a, 1.0); }`,
+  transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide
+});
+const cone = new THREE.Mesh(new THREE.CylinderGeometry(4.4, 1.1, 13, 64, 1, true), coneMat);
+cone.position.y = -6.5; scene.add(cone);
+
+/* ---------------- orchestrator ---------------- */
+const R = 4;
+const core = new THREE.Group(); world.add(core);
+const coreShell = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 48), fresnelMat(0x5fdcff, 2.4, 1.3, 0.02)); core.add(coreShell);
+const coreInner = new THREE.Mesh(new THREE.SphereGeometry(R*0.97, 48, 32), fresnelMat(0x2a7dff, 1.1, 0.22, 0.008));
+coreInner.material.side = THREE.BackSide; core.add(coreInner);
+const latlon = new THREE.Group(); core.add(latlon);
+const gm = lineMat(0x6fe6ff, 0.26);
+for (let lat=-75; lat<=75; lat+=15) latlon.add(circle(R*Math.cos(lat*D2R)*1.002, 96, gm, R*Math.sin(lat*D2R)));
+for (let lon=0; lon<180; lon+=15){ const w = new THREE.Group(); const c = circle(R*1.002, 96, gm); c.rotation.x = Math.PI/2; w.add(c); w.rotation.y = lon*D2R; latlon.add(w); }
+const ico = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.IcosahedronGeometry(2.5, 1)), lineMat(0xbff3ff, 0.42)); core.add(ico);
+const octa = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.OctahedronGeometry(1.45, 0)), lineMat(0xffffff, 0.6)); core.add(octa);
+const nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.55, 24, 16), new THREE.MeshBasicMaterial({ color:0xe8fbff })); core.add(nucleus);
+const nucleusHalo = halo(0x7fe8ff, 6, 0.95); core.add(nucleusHalo);
+core.add(halo(0x2a9dff, 17, 0.2));
+const rings = [];
+[[5.3,0.35,0.2,0.22],[6.1,-0.5,0.9,-0.14],[6.9,1.2,-0.3,0.09]].forEach(([r,tx,tz,sp],i)=>{
+  const g = new THREE.Group();
+  g.add(circle(r, 180, lineMat(i===1?0xa9f0ff:0x48d8ff, 0.38)));
+  const tp = []; const n = i===2 ? 90 : 60;
+  for (let k=0;k<n;k++){ const a = k/n*Math.PI*2; const L = k%5===0 ? 0.4 : 0.16; tp.push(new V3(Math.cos(a)*r,0,Math.sin(a)*r), new V3(Math.cos(a)*(r+L),0,Math.sin(a)*(r+L))); }
+  g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(tp), lineMat(0x7fe8ff, 0.45)));
+  g.rotation.set(tx, 0, tz); g.userData.sp = sp; core.add(g); rings.push(g);
+});
+const hitMeshes = [];
+const newStats = () => ({ in:0, out:0, tools:0, mem:0, led:0, done:0 });
+const O = CFG.orchestrator;
+const PRIME = { id:O.id, kind:'prime', role:O.role || 'Orchestrator', model:O.model || '', pos:new V3(), rad:R+0.25, pulse:0, err:0, load:0, status:'STANDBY', subs:[], subCounter:0, stats:newStats(), last:'—' };
+coreShell.userData.node = PRIME; hitMeshes.push(coreShell);
+
+/* ---------------- agents ---------------- */
+const ROLE_COLOR = { memory:CFG.colors.mem, validator:CFG.colors.ok, toolRunner:CFG.colors.tool };
+function roleOf(id){ for (const k in CFG.roles) if (CFG.roles[k] === id) return k; return null; }
+function makeNode(color, size){
+  const g = new THREE.Group();
+  const cm = new THREE.MeshBasicMaterial({ color:new THREE.Color(color).lerp(new THREE.Color(0xffffff), 0.6) });
+  const coreM = new THREE.Mesh(new THREE.SphereGeometry(size*0.42, 20, 14), cm);
+  const shell = new THREE.Mesh(new THREE.SphereGeometry(size, 28, 20), fresnelMat(color, 2.0, 1.5, 0.035));
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(size*1.38, size*0.028, 6, 72), new THREE.MeshBasicMaterial({ color, transparent:true, opacity:0.5, blending:THREE.AdditiveBlending, depthWrite:false }));
+  ring.rotation.x = Math.PI/2.3;
+  const h = halo(color, size*6, 0.45);
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(Math.max(size*1.7, 0.9), 10, 8), new THREE.MeshBasicMaterial({ colorWrite:false, depthWrite:false }));
+  g.add(shell, coreM, ring, h, hit);
+  return { g, core:coreM, shell, ring, halo:h, hit };
+}
+const agents = [], byId = {};
+const NA = CFG.agents.length;
+CFG.agents.forEach((d, i) => {
+  const role = roleOf(d.id);
+  const color = d.color || (role && ROLE_COLOR[role]) || CFG.colors.comm;
+  const ob = d.orbit || {};
+  const orb = { r:(ob.radius || (13 + (i%3)*1.3)*SC), tilt:ob.tilt || [(rand()-0.5)*1.1, (rand()-0.5)*1.0], ph:ob.phase != null ? ob.phase : i/NA*Math.PI*2, sp:ob.speed || (0.07 + rand()*0.045) };
+  const size = d.size || 0.85;
+  const node = makeNode(color, size);
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(orb.tilt[0], 0, orb.tilt[1]));
+  const orbit = circle(orb.r, 160, lineMat(0x3ee8ff, 0.07)); orbit.quaternion.copy(q); world.add(orbit);
+  const a = { id:String(d.id), kind:'agent', role:d.role || 'Agent', model:d.model || '', orb, node, q, angle:orb.ph, pos:new V3(), rad:size+0.05,
+    color, baseColor:new THREE.Color(color), pulse:0, err:0, load:0, status:'IDLE', subs:[], subCounter:0, stats:newStats(), last:'—' };
+  node.hit.userData.node = a; hitMeshes.push(node.hit);
+  world.add(node.g); agents.push(a); byId[a.id] = a;
+});
+const MEM = byId[CFG.roles.memory] || null, VAL = byId[CFG.roles.validator] || null, TOOLRUN = byId[CFG.roles.toolRunner] || null;
+
+/* ---------------- tool endpoints ---------------- */
+const tools = [];
+CFG.tools.forEach((d, i) => {
+  const n = CFG.tools.length, ang = i/n*Math.PI*2 + 0.4, y = [3.5,-4,5,-2.5,1.5,-5.5,4.2,-1][i%8];
+  const g = new THREE.Group();
+  const oct = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.OctahedronGeometry(0.9, 0)), lineMat(COL.tool, 0.85));
+  const inner = new THREE.Mesh(new THREE.OctahedronGeometry(0.35, 0), new THREE.MeshBasicMaterial({ color:new THREE.Color(COL.tool).lerp(new THREE.Color(0xffffff), 0.5) }));
+  const h = halo(COL.tool, 4.5, 0.4);
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(1.2, 8, 6), new THREE.MeshBasicMaterial({ colorWrite:false, depthWrite:false }));
+  g.add(oct, inner, h, hit); world.add(g);
+  const rr = (d.radius || 23) * SC;
+  const t = { id:String(d.id), kind:'tool', role:d.role || 'External endpoint', model:d.model || 'External endpoint', verbs:d.verbs && d.verbs.length ? d.verbs : ['call'],
+    base:new V3(Math.cos(ang)*rr, y, Math.sin(ang)*rr), pos:new V3(), rad:0.95,
+    node:{ g, oct, inner, halo:h }, pulse:0, err:0, load:0, status:'ONLINE', subs:[], stats:newStats(), last:'—' };
+  t.pos.copy(t.base); hit.userData.node = t; hitMeshes.push(hit); tools.push(t);
+});
+
+/* ---------------- subagents ---------------- */
+const GREEK = ['α','β','γ','δ','ε','ζ','η','θ','κ','λ','μ','σ','φ','ω'];
+const subs = [], shocks = [];
+function shockwave(pos, color, size){
+  const m = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 64), new THREE.MeshBasicMaterial({ color, transparent:true, opacity:1, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide }));
+  const wp = pos.clone(); world.localToWorld(wp); m.position.copy(wp); scene.add(m);
+  shocks.push({ m, t0:simT, size });
+}
+function rootAgent(n){ while (n.kind === 'sub') n = n.parent; return n; }
+function spawnSub(parent, depth, forcedId, role){
+  const size = depth === 1 ? 0.36 : Math.max(0.16, 0.24 - (depth-2)*0.04);
+  const color = parent.kind === 'prime' ? CFG.colors.comm : (parent.color || CFG.colors.comm);
+  const node = makeNode(color, size);
+  parent.subCounter = (parent.subCounter||0) + 1;
+  const id = forcedId ? String(forcedId) : (parent.kind === 'sub' ? `${parent.id}.${parent.subCounter}` : `${parent.id}·${GREEK[(parent.subCounter-1)%GREEK.length]}`);
+  const s = { id, kind:'sub', parent, depth, node, color, baseColor:new THREE.Color(color),
+    role: role || (depth === 1 ? `Subagent of ${parent.id}` : `Nested subagent of ${parent.id}`), model:'',
+    pos:parent.pos.clone(), rad:size, orbitR: depth===1 ? (parent.kind === 'prime' ? 7.6 : 2.5 + Math.random()*1.1) : 1.25 + Math.random()*0.3,
+    orbitA:Math.random()*Math.PI*2, orbitS:(0.7+Math.random()*0.7)*(Math.random()<.5?-1:1),
+    tilt:new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.random()*1.4-.7, 0, Math.random()*1.4-.7)),
+    born:simT, dying:false, dieT:0, pulse:0.8, err:0, load:1, status:'SPAWNING', subs:[], subCounter:0, stats:newStats(), last:'Spawned' };
+  node.g.scale.setScalar(0.001); node.hit.userData.node = s; hitMeshes.push(node.hit);
+  world.add(node.g); parent.subs.push(s); subs.push(s); stats.spawned++;
+  subPosition(s, 0); shockwave(s.pos, color, size*2.2);
+  addLabel(s);
+  return s;
+}
+function retire(s){ if (s.dying) return; s.subs.slice().forEach(retire); s.dying = true; s.dieT = simT; s.status = 'RETIRING'; s.load = 0; }
+const tmpV = new V3();
+function subPosition(s, adt){
+  s.orbitA += adt * s.orbitS * (0.5 + state.rot*0.6);
+  tmpV.set(Math.cos(s.orbitA)*s.orbitR, 0, Math.sin(s.orbitA)*s.orbitR).applyQuaternion(s.tilt);
+  s.pos.copy(s.parent.pos).add(tmpV); s.node.g.position.copy(s.pos);
+}
+
+/* ---------------- energy vectors (shader beams) ---------------- */
+const BEAM_GEO = (() => {
+  const S = 80, A = 8, pos = [], idx = [];
+  for (let i=0;i<=S;i++) for (let j=0;j<=A;j++) pos.push(i/S, j/A*Math.PI*2, 0);
+  for (let i=0;i<S;i++) for (let j=0;j<A;j++){ const a = i*(A+1)+j, b = a+A+1; idx.push(a,b,a+1, b,b+1,a+1); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); return g;
+})();
+const BEAM_VS = `
+uniform vec3 p0; uniform vec3 p1; uniform vec3 p2;
+uniform float uHead; uniform float uWidth; uniform float uLife; uniform float uTime; uniform float uFreq; uniform float uSpeed; uniform float uMsg; uniform float uAmb;
+varying float vT; varying float vEnv; varying vec3 vN; varying vec3 vV;
+vec3 bez(float t){ float u = 1.0 - t; return u*u*p0 + 2.0*u*t*p1 + t*t*p2; }
+void main(){
+  float t = position.x; float ang = position.y;
+  vec3 P = bez(t);
+  vec3 T = normalize(2.0*(1.0-t)*(p1-p0) + 2.0*t*(p2-p1) + vec3(1e-5));
+  vec3 up = abs(T.y) > 0.95 ? vec3(1.0,0.0,0.0) : vec3(0.0,1.0,0.0);
+  vec3 N = normalize(cross(T, up));
+  vec3 B = normalize(cross(T, N));
+  float d = t - uHead;
+  float crest = exp(-d*d/0.0026);
+  float tail = d < 0.0 ? exp(d*7.0)*0.6 : 0.0;
+  float msg = uMsg*(crest + tail);
+  float ph = t*uFreq - uTime*uSpeed;
+  float wave = pow(0.5 + 0.5*cos(6.28318*ph), 8.0)*uAmb;
+  vEnv = msg + wave*0.85;
+  float r = uWidth*(0.4 + 1.8*crest*uMsg + 0.35*tail*uMsg + 0.9*wave)*uLife;
+  vec3 dir = cos(ang)*N + sin(ang)*B;
+  vec4 mv = modelViewMatrix*vec4(P + dir*r, 1.0);
+  vT = t; vN = normalize(normalMatrix*dir); vV = normalize(-mv.xyz);
+  gl_Position = projectionMatrix*mv;
+}`;
+const BEAM_FS = `
+uniform vec3 uColor; uniform float uLife; uniform float uGlow; uniform float uOpacity; uniform float uHead;
+varying float vT; varying float vEnv; varying vec3 vN; varying vec3 vV;
+void main(){
+  float facing = abs(dot(normalize(vN), normalize(vV)));
+  float core = pow(facing, 1.4);
+  float reveal = 1.0 - smoothstep(uHead - 0.005, uHead + 0.03, vT);
+  float ends = smoothstep(0.0, 0.035, vT) * (1.0 - smoothstep(0.965, 1.0, vT));
+  float I = (0.22 + vEnv*2.1)*uGlow;
+  vec3 col = mix(uColor, vec3(1.0), clamp(vEnv*core*0.55, 0.0, 0.8));
+  float m = uLife*reveal*ends*uOpacity*(0.22 + 0.78*core);
+  gl_FragColor = vec4(col*I*m, 1.0);
+}`;
+function beamMesh(color, width){
+  const m = new THREE.ShaderMaterial({
+    uniforms:{ p0:{value:new V3()}, p1:{value:new V3()}, p2:{value:new V3()}, uColor:{value:new THREE.Color(color)},
+      uHead:{value:0}, uWidth:{value:width}, uLife:{value:1}, uTime:{value:0}, uFreq:{value:state.freq}, uSpeed:{value:state.prop},
+      uMsg:{value:1}, uAmb:{value:0.3}, uGlow:{value:1}, uOpacity:{value:1} },
+    vertexShader:BEAM_VS, fragmentShader:BEAM_FS, transparent:true, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide
+  });
+  const mesh = new THREE.Mesh(BEAM_GEO, m); mesh.frustumCulled = false; world.add(mesh); return mesh;
+}
+function randUnit(){ return new V3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1).normalize(); }
+function anchor(node, other, out){ out.copy(other.pos).sub(node.pos); const L = out.length() || 1; return out.multiplyScalar(node.rad / L).add(node.pos); }
+function ctrl(a, b, out){
+  out.addVectors(a, b).multiplyScalar(0.5);
+  const d = a.distanceTo(b); let L = out.length();
+  if (L < 0.5) { out.set(0, 1, 0); L = 1; }
+  return out.addScaledVector(out.clone().divideScalar(L), d*0.2 + 1.0);
+}
+const beams = [];
+const KIND_WORD = { cmd:'Command', comm:'Message', mem:'Memory request', tool:'Tool call', ok:'Result', err:'Error' };
+function send(from, to, type, opts){
+  opts = opts || {};
+  const mesh = beamMesh(COL[type], opts.width || (type === 'cmd' ? 0.12 : 0.085));
+  mesh.material.uniforms.uAmb.value = 0.28;
+  const b = { mesh, from, to, type, ambient:false, t0:simT, dur:(opts.dur||1.2)/state.prop, arrived:false, tArr:0, glow:1,
+    jit:randUnit().multiplyScalar(0.4 + Math.random()*1.3), resolve:null };
+  beams.push(b); stats.comms++; trafficBucket++;
+  from.stats.out++; from.pulse = Math.max(from.pulse, 0.55);
+  from.last = `${KIND_WORD[type]} to ${to.id}`;
+  return new Promise(r => b.resolve = r);
+}
+function ambientBeam(from, to, type, width, glow, threshold){
+  const mesh = beamMesh(COL[type], width);
+  mesh.material.uniforms.uMsg.value = 0; mesh.material.uniforms.uAmb.value = 1; mesh.material.uniforms.uHead.value = 2;
+  beams.push({ mesh, from, to, type, ambient:true, threshold, life:0, glow, jit:randUnit().multiplyScalar(0.5) });
+}
+agents.forEach(a => ambientBeam(PRIME, a, 'cmd', 0.045, 0.5, -1));
+const amb = [];
+if (NA > 1) for (let i=0;i<NA;i++){ if (NA === 2 && i === 1) break; amb.push([agents[i], agents[(i+1)%NA], (agents[i]===MEM || agents[(i+1)%NA]===MEM) ? 'mem' : 'comm']); }
+tools.forEach(t => amb.push([TOOLRUN || PRIME, t, 'tool']));
+for (let i=0;i<NA;i++) for (let j=i+2;j<NA;j++) if (!(i===0 && j===NA-1)) amb.push([agents[i], agents[j], (agents[j]===MEM || agents[i]===MEM) ? 'mem' : 'comm']);
+amb.forEach((p,i) => ambientBeam(p[0], p[1], p[2], 0.035, 0.38, i/amb.length));
+
+/* ---------------- scheduler (simulation clock) ---------------- */
+const timers = [];
+function after(sec, fn){ timers.push({ t:simT + sec, fn }); }
+const wait = s => new Promise(r => after(s, r));
+function runTimers(){ for (let i=timers.length-1;i>=0;i--){ if (timers[i].t <= simT){ const f = timers[i].fn; timers.splice(i,1); f(); } } }
+function begin(n, st){ n.load++; n.status = st; }
+function end(n){ n.load = Math.max(0, n.load-1); if (n.load === 0) n.status = 'IDLE'; }
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const activeTasks = [];
+
+/* ---------------- mode: simulate ---------------- */
+let taskSeq = 0, taskCursor = 0;
+const TASKS = SIM.tasks && SIM.tasks.length ? SIM.tasks : agents.map(a => ({ name:`${a.role} work package`, lead:a.id }));
+function nextTask(){ return TASKS[taskCursor++ % TASKS.length]; }
+async function runTask(def){
+  const id = def.id || ('T-' + String(++taskSeq).padStart(3, '0'));
+  const lead = byId[def.lead] || pick(agents.filter(a => a !== MEM && a !== VAL).concat(agents.length < 3 ? agents : []));
+  const task = { id, name:def.name || id, lead, phase:'Dispatched', start:simT };
+  activeTasks.push(task); stats.dispatched++; lead.stats.led++;
+  log('cmd', `${PRIME.id} dispatched ${id} to ${lead.id}`, task.name);
+  PRIME.pulse = 1;
+  try {
+    await send(PRIME, lead, 'cmd', { dur:1.3 });
+    begin(lead, 'PLANNING'); task.phase = 'Planning';
+    if (MEM && lead !== MEM && Math.random() < SIM.memoryRate) {
+      task.phase = 'Retrieving context';
+      log('mem', `${lead.id} requested context from ${MEM.id}`, pick(SIM.memoryOps));
+      await send(lead, MEM, 'mem', { dur:0.9 }); begin(MEM, 'RETRIEVING');
+      await wait(0.35); end(MEM); await send(MEM, lead, 'mem', { dur:0.9 });
+      stats.mem++; lead.stats.mem++;
+    }
+    lead.status = 'DELEGATING'; task.phase = 'Delegating';
+    const lo = SIM.subagents[0] || 1, hi = Math.max(lo, SIM.subagents[1] || lo);
+    const n = lo + Math.floor(Math.random()*(hi - lo + 1));
+    const jobs = [];
+    for (let i=0;i<n;i++){ await wait(0.25 + Math.random()*0.3); jobs.push(subWork(lead, 1, task, false)); }
+    task.phase = `${n} subagent${n===1?'':'s'} working`;
+    await Promise.all(jobs);
+    let reporter = lead;
+    if (VAL) {
+      let attempt = 0;
+      for (;;) {
+        attempt++; task.phase = 'Validating'; lead.status = 'AWAITING REVIEW';
+        if (lead !== VAL) { log('comm', `${lead.id} sent ${id} to ${VAL.id} for validation`); await send(lead, VAL, 'comm', { dur:1.0 }); }
+        begin(VAL, 'VALIDATING'); await wait(0.8 + Math.random()*0.8); end(VAL);
+        if (attempt === 1 && Math.random() < SIM.rejectRate) {
+          stats.fail++; VAL.err = 1;
+          log('err', `${VAL.id} rejected ${id}`, 'Remediation subagent requested');
+          if (lead !== VAL) await send(VAL, lead, 'err', { dur:0.9 });
+          lead.err = 1; lead.status = 'REMEDIATING'; task.phase = 'Remediating';
+          await subWork(lead, 1, task, true);
+        } else break;
+      }
+      reporter = VAL;
+    }
+    if (MEM && lead !== MEM) send(lead, MEM, 'mem', { dur:0.9 }).then(() => { stats.mem++; log('mem', `${MEM.id} committed ${id} artifacts`); });
+    task.phase = 'Reporting';
+    await send(reporter, PRIME, 'ok', { dur:1.2, width:0.11 });
+    stats.done++; lead.stats.done++; PRIME.stats.done++;
+    log('ok', `${id} ${VAL ? 'validated and ' : ''}complete`, task.name);
+  } catch(e) { log('err', `${id} aborted`, String(e && e.message || e)); }
+  end(lead);
+  activeTasks.splice(activeTasks.indexOf(task), 1);
+}
+async function subWork(parent, depth, task, remed){
+  const s = spawnSub(parent, depth);
+  log('spawn', `${parent.id} spawned ${s.id}`, remed ? 'Remediation' : (depth > 1 ? 'Nested delegation' : task ? task.id : 'Burst'));
+  await send(parent, s, 'comm', { dur:0.55, width:0.06 });
+  s.status = 'WORKING';
+  const root = rootAgent(s);
+  const peers = agents.filter(a => a !== root && a !== MEM);
+  const steps = 1 + Math.floor(Math.random()*3);
+  for (let k=0;k<steps;k++){
+    const r = Math.random();
+    const canNest = depth < 2 && SIM.nestedRate > 0;
+    if (r < 0.45 && tools.length) {
+      const tool = pick(tools); s.status = 'TOOL CALL';
+      stats.tools++; s.stats.tools++; root.stats.tools++;
+      log('tool', `${s.id} called ${tool.id}`, pick(tool.verbs));
+      await send(s, tool, 'tool', { dur:1.0, width:0.07 }); tool.load++;
+      await wait(0.3 + Math.random()*0.5);
+      if (Math.random() < SIM.toolFailRate) {
+        stats.fail++; tool.err = 1;
+        log('err', `${tool.id} returned ${pick(SIM.errors)}`, `${s.id} is retrying`);
+        await send(tool, s, 'err', { dur:0.8, width:0.07 });
+        await wait(0.3); await send(s, tool, 'tool', { dur:0.9, width:0.07 }); stats.tools++;
+        await wait(0.3);
+      }
+      tool.load = Math.max(0, tool.load-1);
+      await send(tool, s, 'tool', { dur:1.0, width:0.07 });
+    } else if (r < 0.7 && MEM) {
+      s.status = 'MEMORY'; stats.mem++; s.stats.mem++;
+      log('mem', `${s.id} queried ${MEM.id}`, pick(SIM.memoryOps));
+      await send(s, MEM, 'mem', { dur:1.0, width:0.07 }); begin(MEM, 'RETRIEVING');
+      await wait(0.25); end(MEM);
+      await send(MEM, s, 'mem', { dur:1.0, width:0.07 });
+    } else if ((r > 1 - SIM.nestedRate && canNest) || !peers.length) {
+      if (!canNest) { await wait(0.6); continue; }
+      s.status = 'DELEGATING';
+      const k2 = 1 + (Math.random() < .45 ? 1 : 0), js = [];
+      for (let i=0;i<k2;i++){ await wait(0.2); js.push(subWork(s, depth+1, task, false)); }
+      await Promise.all(js);
+    } else {
+      const peer = pick(peers);
+      s.status = 'HANDOFF';
+      log('comm', `${s.id} handed reasoning to ${peer.id}`);
+      await send(s, peer, 'comm', { dur:1.0, width:0.07 }); begin(peer, 'ASSISTING');
+      await wait(0.5 + Math.random()*0.6); end(peer);
+      await send(peer, s, 'comm', { dur:1.0, width:0.07 });
+    }
+    s.status = 'WORKING';
+    await wait(0.2 + Math.random()*0.4);
+  }
+  s.status = 'REPORTING';
+  await send(s, parent, 'ok', { dur:0.8, width:0.06 });
+  s.stats.done++;
+  log('retire', `${s.id} returned results and retired`);
+  retire(s);
+}
+async function burst(){
+  const a = pick(agents.filter(x => x !== MEM).concat(agents.length === 1 ? agents : []));
+  begin(a, 'DELEGATING');
+  log('cmd', `Manual burst: ${a.id} is fanning out subagents`);
+  await send(PRIME, a, 'cmd', { dur:1.0 });
+  const js = []; for (let i=0;i<4;i++){ await wait(0.15); js.push(subWork(a, 1, null, false)); }
+  await Promise.all(js); end(a);
+}
+async function autoLoop(){
+  await wait(1.0);
+  if (state.auto) runTask(nextTask());
+  for (;;) { await wait(3.5 + Math.random()*3); if (state.auto && activeTasks.length < SIM.maxConcurrent) runTask(nextTask()); }
+}
+async function chatterLoop(){
+  for (;;) {
+    await wait(Math.max(0.5, 3.2 - state.density*2.7) * (0.6 + Math.random()*0.8));
+    if (state.density < 0.05 || NA < 2) continue;
+    const a = pick(agents), type = MEM && Math.random() < .25 ? 'mem' : 'comm';
+    const to = type === 'mem' ? MEM : pick(agents.filter(x => x !== a));
+    if (!to || to === a) continue;
+    send(a, to, type, { dur:1.1, width:0.05 });
+    if (Math.random() < 0.2) log('sync', `${a.id} and ${to.id} exchanged ${type === 'mem' ? 'context' : 'state'} sync`);
+  }
+}
+
+/* ---------------- mode: replay / live ---------------- */
+const rEvents = (CFG.replay.events || []).map((e,i) => Object.assign({ _i:i }, e)).sort((a,b) => ((a.t||0) - (b.t||0)) || (a._i - b._i));
+let rIdx = 0, rOffset = 0.8, replayDone = false;
+const taskById = {};
+function N(id){
+  if (id == null) return null;
+  const n = nodeById[String(id)] || ((id === 'orchestrator' || id === 'PRIME') ? PRIME : null);
+  if (!n) console.warn('HVS: unknown node id', id);
+  return n;
+}
+function countMsg(k, t){
+  if (k === 'tool' && (t.kind === 'tool' || !tools.length)) stats.tools++;
+  if (k === 'mem' && (t === MEM || !MEM)) stats.mem++;
+  if (k === 'err') stats.fail++;
+}
+function applyEvent(ev){
+  if (!ev || typeof ev !== 'object') return;
+  const type = ev.type || 'msg';
+  if (type === 'msg') {
+    const f = N(ev.from), t = N(ev.to); if (!f || !t || f === t) return;
+    const k = COL[ev.kind] !== undefined ? ev.kind : 'comm';
+    countMsg(k, t);
+    send(f, t, k, { dur:ev.dur || 1.1, width:ev.width });
+    if (ev.busy) { begin(t, ev.status || 'WORKING'); after((ev.dur||1.1)/state.prop + (ev.busy === true ? 1.2 : +ev.busy), () => end(t)); }
+    const word = (k === 'tool' && f.kind === 'tool') ? 'Tool response' : (k === 'mem' && f === MEM) ? 'Memory response' : KIND_WORD[k];
+    if (!ev.silent) log(k, ev.msg || `${word}: ${f.id} → ${t.id}`, ev.note);
+  } else if (type === 'spawn') {
+    const p = N(ev.parent); if (!p || (ev.id != null && nodeById[String(ev.id)])) return;
+    const s = spawnSub(p, p.kind === 'sub' ? p.depth+1 : 1, ev.id, ev.role);
+    s.status = ev.status || 'WORKING';
+    if (ev.link !== false) send(p, s, 'comm', { dur:0.55, width:0.06 });
+    if (!ev.silent) log('spawn', ev.msg || `${p.id} spawned ${s.id}`, ev.note);
+  } else if (type === 'retire') {
+    const s = nodeById[String(ev.id)]; if (!s || s.kind !== 'sub' || s.dying) return;
+    if (ev.report) send(s, s.parent, ev.report === 'err' ? 'err' : 'ok', { dur:0.8, width:0.06 }).then(() => retire(s));
+    else retire(s);
+    if (!ev.silent) log('retire', ev.msg || `${s.id} retired`, ev.note);
+  } else if (type === 'status') {
+    const n = N(ev.id); if (!n) return;
+    if (ev.status) n.status = ev.status;
+    if (ev.busy === true && !n._rb) { n._rb = 1; n.load++; }
+    if (ev.busy === false && n._rb) { n._rb = 0; end(n); if (ev.status) n.status = ev.status; }
+    if (ev.error) { n.err = 1; stats.fail++; }
+    n.pulse = Math.max(n.pulse, 0.6);
+    if (ev.msg) log(ev.error ? 'err' : 'sys', ev.msg, ev.note);
+  } else if (type === 'task') {
+    const phase = ev.phase || 'start';
+    if (phase === 'start') {
+      const lead = N(ev.lead);
+      const task = { id:String(ev.id || ('T-' + String(++taskSeq).padStart(3,'0'))), name:ev.name || ev.id || 'Task', lead, phase:ev.label || 'Running', start:simT };
+      taskById[task.id] = task; activeTasks.push(task); stats.dispatched++;
+      if (lead) { begin(lead, ev.status || 'WORKING'); lead.stats.led++; if (ev.dispatch !== false && lead !== PRIME) send(PRIME, lead, 'cmd', { dur:1.2 }); }
+      PRIME.pulse = 1;
+      if (!ev.silent) log('cmd', ev.msg || `${task.id} started${lead ? ' on ' + lead.id : ''}`, task.name);
+    } else {
+      const task = taskById[String(ev.id)]; if (!task) return;
+      if (phase === 'update') { task.phase = ev.label || task.phase; if (ev.msg) log('sys', ev.msg, ev.note); return; }
+      const ok = ev.ok !== false;
+      activeTasks.splice(activeTasks.indexOf(task), 1); delete taskById[task.id];
+      if (ok) { stats.done++; PRIME.stats.done++; if (task.lead) task.lead.stats.done++; } else stats.fail++;
+      if (task.lead) { end(task.lead); if (!ok) task.lead.err = 1; if (ev.report !== false && task.lead !== PRIME) send(task.lead, PRIME, ok ? 'ok' : 'err', { dur:1.2, width:0.11 }); }
+      if (!ev.silent) log(ok ? 'ok' : 'err', ev.msg || `${task.id} ${ok ? 'complete' : 'failed'}`, ev.note || task.name);
+    }
+  } else if (type === 'log') {
+    log(TAGS[ev.kind] ? ev.kind : 'sys', ev.msg || '', ev.note);
+  }
+}
+function replayTick(){
+  if (MODE !== 'replay') return;
+  const sp = CFG.replay.speed || 1;
+  while (rIdx < rEvents.length && (rEvents[rIdx].t || 0)/sp <= simT - rOffset) applyEvent(rEvents[rIdx++]);
+  if (rIdx >= rEvents.length && !replayDone) {
+    replayDone = true;
+    log('sys', 'Replay finished', CFG.replay.loop ? 'Restarting in 5 s' : 'Use Restart replay to run it again');
+    if (CFG.replay.loop) after(5, restartReplay);
+  }
+}
+function clearRun(){
+  subs.filter(s => s.depth === 1).forEach(retire);
+  activeTasks.length = 0; for (const k in taskById) delete taskById[k];
+  [PRIME, ...agents, ...tools].forEach(n => { n.load = 0; n._rb = 0; n.status = n.kind === 'tool' ? 'ONLINE' : 'IDLE'; n.subCounter = 0; });
+}
+function restartReplay(){
+  clearRun(); rIdx = 0; rOffset = simT + 1; replayDone = false;
+  log('sys', 'Replay restarted');
+}
+
+/* ---------------- labels ---------------- */
+const labelsEl = $('#labels'), labels = [], nodeById = {};
+function addLabel(n){
+  const el = document.createElement('div');
+  el.className = 'lbl ' + n.kind; el.dataset.id = n.id;
+  if (n.kind === 'sub') el.innerHTML = `<b>${esc(n.id)}</b>`;
+  else el.innerHTML = `<b>${esc(n.id)}</b><span class="r">${n.kind==='tool' ? esc(n.role) : esc(n.role) + ' · '}<span class="s">${n.kind==='tool' ? '' : esc(n.status)}</span></span>`;
+  el.addEventListener('click', ev => { ev.stopPropagation(); select(n); });
+  labelsEl.appendChild(el);
+  const L = { n, el, s:el.querySelector('.s'), off: n.kind === 'prime' ? new V3(0, -(R+1.2), 0) : null };
+  labels.push(L); nodeById[n.id] = n; n.label = L;
+}
+addLabel(PRIME); agents.forEach(addLabel); tools.forEach(addLabel);
+const proj = new V3();
+function updateLabels(){
+  const w = window.innerWidth, h = window.innerHeight, camD = camera.position.length();
+  for (const L of labels){
+    const n = L.n;
+    proj.copy(n.pos); if (L.off) proj.add(L.off);
+    world.localToWorld(proj);
+    const far = proj.distanceTo(camera.position) > camD + 2;
+    proj.project(camera);
+    if (proj.z > 1 || proj.x < -1.2 || proj.x > 1.2 || proj.y < -1.2 || proj.y > 1.2) { L.el.style.display = 'none'; continue; }
+    L.el.style.display = '';
+    const x = (proj.x*0.5 + 0.5)*w, y = (-proj.y*0.5 + 0.5)*h;
+    const dx = n.kind === 'prime' ? '-50%' : (n.kind === 'sub' ? '8px' : '14px');
+    L.el.style.transform = `translate3d(${x.toFixed(1)}px,${y.toFixed(1)}px,0) translate(${dx},-50%)`;
+    L.el.classList.toggle('far', far);
+  }
+}
+const primeStatus = () => activeTasks.length ? 'ORCHESTRATING' : (MODE === 'live' ? 'LISTENING' : 'STANDBY');
+function refreshLabelText(){
+  for (const L of labels){
+    const n = L.n;
+    if (L.s && n.kind !== 'tool') L.s.textContent = n.kind === 'prime' ? primeStatus() : n.status;
+    L.el.classList.toggle('busy', n.load > 0);
+    L.el.classList.toggle('err', n.err > 0.15);
+    L.el.classList.toggle('sel', n === selected);
+  }
+}
+
+/* ---------------- selection ---------------- */
+let selected = null;
+const reticle = new THREE.Group();
+for (let k=0;k<4;k++){
+  reticle.add(new THREE.Mesh(new THREE.RingGeometry(1, 1.07, 24, 1, k*Math.PI/2 + 0.2, Math.PI/2 - 0.4),
+    new THREE.MeshBasicMaterial({ color:0xe9f8ff, transparent:true, opacity:0.9, blending:THREE.AdditiveBlending, depthWrite:false, side:THREE.DoubleSide })));
+}
+reticle.visible = false; scene.add(reticle);
+function select(n){
+  selected = n || null; reticle.visible = !!n;
+  $('#selAgent').value = n ? n.id : '';
+  renderInspector(); refreshLabelText(); renderRoster();
+  if (n && isMobile() && document.body.dataset.tab) setTab('inspect');
+}
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let downX = 0, downY = 0;
+renderer.domElement.addEventListener('pointerdown', e => { downX = e.clientX; downY = e.clientY; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (Math.hypot(e.clientX-downX, e.clientY-downY) > 6) return;
+  mouse.set(e.clientX/window.innerWidth*2-1, -(e.clientY/window.innerHeight)*2+1);
+  ray.setFromCamera(mouse, camera);
+  const hits = ray.intersectObjects(hitMeshes, false);
+  const hit = hits.find(h => h.object.userData.node && !(h.object.userData.node.kind === 'sub' && h.object.userData.node.dying));
+  if (hit) select(hit.object.userData.node);
+});
+
+/* ---------------- UI wiring ---------------- */
+const sliders = [
+  ['sRot','oRot','rot', v => v.toFixed(2)+'×'], ['sFreq','oFreq','freq', v => v.toFixed(1)],
+  ['sProp','oProp','prop', v => v.toFixed(2)+'×'], ['sDens','oDens','density', v => Math.round(v*100)+'%'],
+  ['sGlow','oGlow','glow', v => v.toFixed(2)], ['sOpac','oOpac','opacity', v => Math.round(v*100)+'%'],
+  ['sSim','oSim','simSpeed', v => v.toFixed(2)+'×'],
+];
+sliders.forEach(([s,o,k,f]) => {
+  const inp = $('#'+s), out = $('#'+o);
+  const apply = () => { state[k] = parseFloat(inp.value); out.textContent = f(state[k]); applyVisualState(); };
+  inp.addEventListener('input', apply); apply();
+});
+function applyVisualState(){
+  if (bloom) bloom.strength = state.glow;
+  fresnelMats.forEach(m => m.uniforms.uOpacity.value = state.opacity);
+  lineMats.forEach(m => m.opacity = Math.min(1, m.userData.base * (0.35 + state.opacity*0.95)));
+  coneMat.uniforms.uOpacity.value = state.opacity;
+}
+function togglePause(){
+  state.paused = !state.paused;
+  document.body.classList.toggle('paused', state.paused);
+  const t = state.paused ? 'Resume' : 'Pause';
+  $('#bPause').textContent = t; $('#hPause').textContent = t;
+  $('#hPause').setAttribute('aria-label', state.paused ? 'Resume animation' : 'Pause animation');
+  log('sys', state.paused ? 'Animation paused' : 'Animation resumed');
+}
+function primaryAction(){
+  if (MODE === 'replay') return restartReplay();
+  if (MODE === 'live') { clearRun(); log('sys', 'Cleared subagents and tasks'); return; }
+  if (activeTasks.length >= SIM.maxConcurrent*2) { log('sys', 'Dispatch held: too many tasks in flight'); return; }
+  runTask(nextTask());
+}
+$('#bPause').onclick = togglePause; $('#hPause').onclick = togglePause;
+$('#bDispatch').onclick = primaryAction; $('#hDispatch').onclick = primaryAction;
+$('#bBurst').onclick = () => burst();
+$('#bReset').onclick = () => defaultView();
+$('#cAuto').onchange = e => { state.auto = e.target.checked; log('sys', state.auto ? 'Auto-dispatch on' : 'Auto-dispatch off'); };
+window.addEventListener('keydown', e => { if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); togglePause(); } });
+const selEl = $('#selAgent');
+function fillSelect(){
+  const opts = ['<option value="">Select a node…</option>'];
+  [PRIME, ...agents, ...tools].forEach(n => opts.push(`<option value="${esc(n.id)}">${esc(n.id)}</option>`));
+  subs.filter(s => !s.dying).forEach(s => opts.push(`<option value="${esc(s.id)}">${esc(s.id)} (subagent)</option>`));
+  const v = selEl.value; selEl.innerHTML = opts.join(''); selEl.value = v;
+}
+selEl.onchange = () => select(nodeById[selEl.value] || null);
+function setTab(t){
+  document.body.dataset.tab = t;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+}
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(document.body.dataset.tab === b.dataset.t ? '' : b.dataset.t));
+$('#roster').addEventListener('click', e => { const r = e.target.closest('.ag'); if (r) select(nodeById[r.dataset.id]); });
+$('#insp').addEventListener('click', e => { const r = e.target.closest('[data-id]'); if (r && nodeById[r.dataset.id]) select(nodeById[r.dataset.id]); });
+
+/* ---------------- event log ---------------- */
+const logEl = $('#log');
+const TAGS = { cmd:'CMD', comm:'MSG', mem:'MEM', tool:'TOOL', ok:'DONE', err:'FAIL', spawn:'SPAWN', retire:'EXIT', sys:'SYS', sync:'SYNC' };
+function fmt(t){ t = Math.max(0, t); const m = Math.floor(t/60), s = t - m*60; return `${String(m).padStart(2,'0')}:${s.toFixed(1).padStart(4,'0')}`; }
+function log(type, msg, detail){
+  const d = document.createElement('div'); d.className = 'ev ' + type;
+  d.innerHTML = `<span class="ts">${fmt(simT)}</span><span class="tag">${TAGS[type] || 'SYS'}</span><span class="msg">${esc(msg)}${detail ? `<em>${esc(detail)}</em>` : ''}</span>`;
+  logEl.prepend(d);
+  while (logEl.children.length > 150) logEl.lastChild.remove();
+}
+
+/* ---------------- telemetry ---------------- */
+let trafficBucket = 0, bucketT = 0; const traffic = new Array(40).fill(0);
+const spark = $('#spark'), sctx = spark.getContext('2d');
+function sizeSpark(){ const r = Math.min(window.devicePixelRatio||1, 2); spark.width = Math.max(10, spark.clientWidth*r); spark.height = Math.max(10, spark.clientHeight*r); drawSpark(); }
+function drawSpark(){
+  const w = spark.width, h = spark.height; sctx.clearRect(0,0,w,h);
+  const max = Math.max(4, ...traffic);
+  sctx.strokeStyle = 'rgba(110,220,255,.12)'; sctx.lineWidth = 1;
+  for (let i=1;i<4;i++){ sctx.beginPath(); sctx.moveTo(0, h*i/4); sctx.lineTo(w, h*i/4); sctx.stroke(); }
+  sctx.beginPath();
+  traffic.forEach((v,i) => { const x = i/(traffic.length-1)*w, y = h - (v/max)*(h-4) - 2; i ? sctx.lineTo(x,y) : sctx.moveTo(x,y); });
+  sctx.strokeStyle = CFG.colors.comm; sctx.lineWidth = Math.max(1, h/30); sctx.shadowColor = CFG.colors.comm; sctx.shadowBlur = 6; sctx.stroke(); sctx.shadowBlur = 0;
+  sctx.lineTo(w, h); sctx.lineTo(0, h); sctx.closePath(); sctx.fillStyle = 'rgba(62,232,255,.08)'; sctx.fill();
+}
+function renderRoster(){
+  $('#roster').innerHTML = agents.map(a => {
+    const live = a.subs.filter(s => !s.dying).length;
+    return `<div class="ag ${a.load>0?'busy':''} ${a.err>0.15?'err':''} ${selected===a?'sel':''}" data-id="${esc(a.id)}"><i class="dot"></i><b>${esc(a.id)}</b><span class="st">${esc(a.status)}</span><span class="sb">${live ? live + ' sub' : ''}</span></div>`;
+  }).join('');
+}
+function renderTasks(){
+  const el = $('#tasks');
+  if (!activeTasks.length) { el.innerHTML = `<div class="empty">${MODE === 'simulate' ? 'No tasks in flight. Dispatch one to start.' : MODE === 'live' ? 'Waiting for events.' : 'No tasks in flight.'}</div>`; return; }
+  el.innerHTML = activeTasks.map(t => `<div class="tk"><div class="h"><span>${esc(t.id)} · ${esc(t.lead ? t.lead.id : PRIME.id)}</span><span>${(simT - t.start).toFixed(0)} s</span></div><div class="d">${esc(t.name)}</div><div class="d" style="color:var(--cyan)">${esc(t.phase)}</div></div>`).join('');
+}
+function renderInspector(){
+  const el = $('#insp'), n = selected;
+  if (!n || (n.kind === 'sub' && n.dying && simT - n.dieT > 0.8)) {
+    el.innerHTML = n ? `<div class="empty">${esc(n.id)} has retired. Pick another node.</div>` : '<div class="empty">Tap any node in the hologram, or pick one above.</div>';
+    if (n) { selected = null; reticle.visible = false; }
+    return;
+  }
+  const st = n.kind === 'prime' ? primeStatus() : n.status;
+  const pc = n.err > 0.15 ? 'err' : (n.load > 0 || (n.kind === 'prime' && activeTasks.length) ? '' : 'idle');
+  const live = n.subs.filter(s => !s.dying);
+  const load = Math.min(1, (n.load + live.length*0.5) / 4);
+  let kv;
+  if (n.kind === 'prime') kv = [['Active tasks', activeTasks.length], ['Dispatched', stats.dispatched], ['Completed', stats.done], ['Failures', stats.fail], ['Agents', agents.length], ['Subagents live', subs.filter(s=>!s.dying).length], ['Spawned total', stats.spawned], ['Comm events', stats.comms]];
+  else if (n.kind === 'tool') kv = [['Calls in', n.stats.in], ['Responses', n.stats.out], ['In flight', n.load], ['Errors', n.err > 0.15 ? 'now' : '—']];
+  else kv = [['Messages in', n.stats.in], ['Messages out', n.stats.out], ['Tool calls', n.stats.tools], ['Memory ops', n.stats.mem], ['Tasks led', n.stats.led], ['Completed', n.stats.done], ['Load', n.load], ['Subagents', live.length]];
+  const parentLine = n.kind === 'sub' ? `<div class="last">Parent: <span data-id="${esc(n.parent.id)}" style="color:var(--cyan);cursor:pointer">${esc(n.parent.id)}</span> · depth ${n.depth} · age ${(simT - n.born).toFixed(1)} s</div>` : '';
+  el.innerHTML = `<div class="nm">${esc(n.id)}</div><div class="rl">${esc(n.role)}${n.model ? ' · ' + esc(n.model) : ''}</div>
+    <span class="pill ${pc}">${esc(st)}</span>
+    <div class="bar"><i style="width:${(load*100).toFixed(0)}%"></i></div>
+    <div class="kv">${kv.map(([k,v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
+    ${live.length ? `<h3>Live subagents</h3><div class="subl">${live.map(s => `<div data-id="${esc(s.id)}">${esc(s.id)}<span>${esc(s.status)}</span></div>`).join('')}</div>` : ''}
+    ${parentLine}
+    <div class="last">Last action: ${esc(n.last)}</div>`;
+}
+function uiTick(){
+  $('#mSubs').textContent = subs.filter(s => !s.dying).length;
+  $('#mTasks').textContent = activeTasks.length;
+  $('#mComms').textContent = stats.comms; $('#mTools').textContent = stats.tools; $('#mMem').textContent = stats.mem;
+  $('#mDone').textContent = stats.done; $('#mFail').textContent = stats.fail;
+  renderRoster(); renderTasks(); renderInspector(); refreshLabelText();
+  if (document.activeElement !== selEl) fillSelect();
+}
+
+/* ---------------- frame loop ---------------- */
+const clock = new THREE.Clock();
+let uiAcc = 0;
+const tA = new V3();
+function visual(n, dt){
+  n.pulse = Math.max(0, n.pulse - dt*1.8); n.err = Math.max(0, n.err - dt*0.7);
+  const v = n.node, e = Math.min(1, n.err*1.5);
+  v.shell.scale.setScalar(1 + n.pulse*0.4);
+  v.shell.material.uniforms.uPulse.value = n.pulse;
+  v.shell.material.uniforms.uColor.value.copy(n.baseColor).lerp(RED, e);
+  v.ring.material.color.copy(n.baseColor).lerp(RED, e);
+  v.ring.material.opacity = (n.load > 0 ? 0.95 : 0.4) * (0.4 + state.opacity*0.8);
+  v.ring.rotation.z += dt*(n.load > 0 ? 2.4 : 0.6);
+  v.halo.material.opacity = 0.3 + n.pulse*0.5 + (n.load > 0 ? 0.15 : 0);
+}
+function easeOutBack(x){ const c1 = 1.70158, c3 = c1 + 1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); }
+const toolBase = new THREE.Color(COL.tool);
+function frame(){
+  requestAnimationFrame(frame);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const adt = state.paused ? 0 : dt;
+  animT += adt;
+  if (!state.paused) { simT += dt*state.simSpeed; runTimers(); replayTick(); }
+
+  world.rotation.y += adt*0.05*state.rot;
+  latlon.rotation.y += adt*0.12*state.rot;
+  ico.rotation.x += adt*0.21*state.rot; ico.rotation.y -= adt*0.15*state.rot;
+  octa.rotation.y += adt*0.5*state.rot; octa.rotation.z += adt*0.18*state.rot;
+  rings.forEach(g => g.rotateY(adt*g.userData.sp*(0.4 + state.rot)));
+  emitterRings.rotation.y -= adt*0.3*state.rot;
+  floor.rotation.y += adt*0.01*state.rot;
+  PRIME.pulse = Math.max(0, PRIME.pulse - adt*1.5); PRIME.err = Math.max(0, PRIME.err - adt*0.7);
+  const beat = 0.5 + 0.5*Math.sin(animT*2.2);
+  nucleusHalo.scale.setScalar(5.5 + beat*0.8 + PRIME.pulse*4);
+  nucleus.scale.setScalar(1 + PRIME.pulse*0.35);
+  coreShell.material.uniforms.uPulse.value = PRIME.pulse;
+  fresnelMats.forEach(m => m.uniforms.uTime.value = animT);
+  coneMat.uniforms.uTime.value = animT;
+
+  for (const a of agents){
+    a.angle += adt*a.orb.sp*state.rot*1.2;
+    a.pos.set(Math.cos(a.angle)*a.orb.r, 0, Math.sin(a.angle)*a.orb.r).applyQuaternion(a.q);
+    a.node.g.position.copy(a.pos); visual(a, adt);
+  }
+  for (const t of tools){
+    t.pos.copy(t.base); t.pos.y += Math.sin(animT*0.8 + t.base.x)*0.4;
+    t.node.g.position.copy(t.pos);
+    t.node.oct.rotation.y += adt*(t.load > 0 ? 2.2 : 0.5); t.node.oct.rotation.x += adt*0.3;
+    t.pulse = Math.max(0, t.pulse - adt*1.8); t.err = Math.max(0, t.err - adt*0.7);
+    t.node.oct.material.color.copy(toolBase).lerp(RED, Math.min(1, t.err*1.5));
+    t.node.halo.material.opacity = 0.3 + t.pulse*0.6;
+    t.node.g.scale.setScalar(1 + t.pulse*0.3);
+  }
+  for (let i=subs.length-1;i>=0;i--){
+    const s = subs[i];
+    subPosition(s, adt); visual(s, adt);
+    if (s.dying) {
+      const k = (simT - s.dieT)/0.6;
+      s.node.g.scale.setScalar(Math.max(0.001, 1 - k));
+      if (k >= 1) {
+        world.remove(s.node.g); subs.splice(i,1);
+        const pi = s.parent.subs.indexOf(s); if (pi >= 0) s.parent.subs.splice(pi, 1);
+        const hi = hitMeshes.indexOf(s.node.hit); if (hi >= 0) hitMeshes.splice(hi, 1);
+        s.label.el.remove(); labels.splice(labels.indexOf(s.label), 1);
+        if (nodeById[s.id] === s) delete nodeById[s.id];
+        s.node.g.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) { const fi = fresnelMats.indexOf(o.material); if (fi >= 0) fresnelMats.splice(fi,1); o.material.dispose(); } });
+      }
+    } else {
+      const k = Math.min(1, (simT - s.born)/0.7);
+      s.node.g.scale.setScalar(Math.max(0.001, easeOutBack(k)));
+    }
+  }
+  for (let i=shocks.length-1;i>=0;i--){
+    const sw = shocks[i], k = (simT - sw.t0)/0.9;
+    if (k >= 1) { scene.remove(sw.m); sw.m.geometry.dispose(); sw.m.material.dispose(); shocks.splice(i,1); continue; }
+    sw.m.quaternion.copy(camera.quaternion);
+    sw.m.scale.setScalar(sw.size*(1 + k*4)); sw.m.material.opacity = (1-k)*(1-k);
+  }
+  const glowMul = composer ? 1 : 0.7 + state.glow*0.35;
+  for (let i=beams.length-1;i>=0;i--){
+    const b = beams[i], u = b.mesh.material.uniforms;
+    anchor(b.from, b.to, u.p0.value); anchor(b.to, b.from, u.p2.value);
+    ctrl(u.p0.value, u.p2.value, u.p1.value).add(b.jit);
+    u.uTime.value = animT; u.uFreq.value = state.freq; u.uSpeed.value = state.prop*0.8;
+    u.uGlow.value = b.glow*glowMul; u.uOpacity.value = 0.55 + state.opacity*0.6;
+    if (b.ambient) {
+      const target = state.density > b.threshold ? 1 : 0;
+      b.life += (target - b.life)*Math.min(1, dt*3);
+      u.uLife.value = b.life; b.mesh.visible = b.life > 0.01;
+      continue;
+    }
+    const k = (simT - b.t0)/b.dur;
+    if (!b.arrived) {
+      u.uHead.value = Math.max(0, k); u.uLife.value = 1;
+      if (k >= 1) {
+        b.arrived = true; b.tArr = simT;
+        b.to.pulse = 1; b.to.stats.in++;
+        if (b.type === 'err') b.to.err = 1;
+        b.resolve();
+      }
+    } else {
+      const f = simT - b.tArr;
+      u.uHead.value = 1 + f/b.dur*0.8;
+      const life = 1 - f/0.9; u.uLife.value = Math.max(0, life);
+      if (life <= 0) { world.remove(b.mesh); b.mesh.material.dispose(); beams.splice(i,1); }
+    }
+  }
+  if (selected && reticle.visible) {
+    tA.copy(selected.pos); world.localToWorld(tA);
+    reticle.position.copy(tA); reticle.quaternion.copy(camera.quaternion);
+    reticle.rotateZ(animT*0.8);
+    reticle.scale.setScalar(selected.rad*1.9 + 0.3 + Math.sin(animT*4)*0.05);
+  }
+  controls.update();
+  if (composer) composer.render(); else renderer.render(scene, camera);
+  updateLabels();
+  if (!state.paused) {
+    bucketT += dt*state.simSpeed;
+    if (bucketT >= 1) { bucketT = 0; traffic.shift(); traffic.push(trafficBucket); $('#spkNow').textContent = trafficBucket + ' / s'; trafficBucket = 0; drawSpark(); }
+  }
+  uiAcc += dt;
+  if (uiAcc > 0.2) { uiAcc = 0; uiTick(); }
+  $('#clock').textContent = 'T+' + fmt(simT);
+}
+
+/* ---------------- public API for live feeds ---------------- */
+window.HVS = {
+  push(ev){ (Array.isArray(ev) ? ev : [ev]).forEach(applyEvent); },
+  dispatch(def){ if (MODE === 'simulate') runTask(def || nextTask()); },
+  clear: clearRun,
+  nodes: () => Object.keys(nodeById),
+  config: CFG
+};
+window.addEventListener('message', e => { if (e.data && e.data.hvs) window.HVS.push(e.data.hvs); });
+
+/* ---------------- boot ---------------- */
+window.addEventListener('resize', resize);
+resize(); applyVisualState(); fillSelect(); renderRoster();
+(CFG.boot && CFG.boot.length ? CFG.boot : [
+  `${CFG.brand.name} runtime online`,
+  CFG.brand.operation ? `${CFG.brand.operationLabel} ${CFG.brand.operation} initiated` : null,
+  `${agents.length} agents registered, ${tools.length} tool endpoints bound`
+]).filter(Boolean).forEach(m => log('sys', m));
+if (MODE === 'simulate') { autoLoop(); if (SIM.chatter !== false) chatterLoop(); }
+else if (MODE === 'replay') log('sys', `Replaying ${rEvents.length} recorded events`);
+else log('sys', 'Listening for events via HVS.push() or postMessage');
+frame();
+})();
+</script>
+</body>
+</html>
