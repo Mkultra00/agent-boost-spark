@@ -165,6 +165,16 @@ function Index() {
           </aside>
         </section>
 
+        <section className="mt-8 overflow-hidden rounded-md border border-zinc-800">
+          <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-2 text-xs uppercase tracking-widest text-zinc-500">
+            <span>holographic swarm</span>
+            <a href="/swarm.html" target="_blank" rel="noreferrer" className="text-emerald-400">
+              fullscreen ↗
+            </a>
+          </div>
+          <iframe src="/swarm.html" title="Holographic agent swarm" className="h-[640px] w-full" />
+        </section>
+
         <section className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-3">
           <Card n="01" title="Sandbox">
             Daytona spins a disposable workspace per run. Target agent + tools live inside; nothing
